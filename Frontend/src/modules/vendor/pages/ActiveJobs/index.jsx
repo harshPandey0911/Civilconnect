@@ -5,6 +5,7 @@ import { toast } from 'react-hot-toast';
 import { vendorTheme as themeColors } from '../../../../theme';
 import Header from '../../components/layout/Header';
 import BottomNav from '../../components/layout/BottomNav';
+import LogoLoader from '../../../../components/common/LogoLoader';
 
 import { getBookings, assignWorker as assignWorkerApi } from '../../services/bookingService';
 import { ConfirmDialog } from '../../components/common';
@@ -193,9 +194,32 @@ const ActiveJobs = () => {
 
         {/* Jobs List */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 min-h-[50vh]">
-            <FiLoader className="w-12 h-12 text-teal-600 animate-spin mb-4" />
-            <p className="text-gray-500 font-medium">Loading jobs...</p>
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm animate-pulse">
+                <div className="flex justify-between mb-4 pb-4 border-b border-slate-50">
+                  <div className="space-y-2">
+                    <div className="h-3 w-20 bg-slate-100 rounded"></div>
+                    <div className="h-5 w-48 bg-slate-100 rounded"></div>
+                  </div>
+                  <div className="h-10 w-20 bg-slate-100 rounded-lg"></div>
+                </div>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-slate-100"></div>
+                    <div className="h-4 w-32 bg-slate-100 rounded"></div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-slate-100"></div>
+                    <div className="h-4 w-40 bg-slate-100 rounded"></div>
+                  </div>
+                </div>
+                <div className="mt-4 pt-4 border-t border-slate-50 flex gap-3">
+                  <div className="h-10 flex-1 bg-slate-100 rounded-lg"></div>
+                  <div className="h-10 flex-1 bg-slate-100 rounded-lg"></div>
+                </div>
+              </div>
+            ))}
           </div>
         ) : filteredJobs.length === 0 ? (
           <div

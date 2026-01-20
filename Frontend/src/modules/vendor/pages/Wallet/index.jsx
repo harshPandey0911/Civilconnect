@@ -4,6 +4,7 @@ import { FiDollarSign, FiArrowUp, FiArrowDown, FiArrowRight, FiClock, FiCheckCir
 import { vendorTheme as themeColors } from '../../../../theme';
 import Header from '../../components/layout/Header';
 import BottomNav from '../../components/layout/BottomNav';
+import LogoLoader from '../../../../components/common/LogoLoader';
 import vendorWalletService from '../../../../services/vendorWalletService';
 import { toast } from 'react-hot-toast';
 
@@ -121,14 +122,7 @@ const Wallet = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: themeColors.backgroundGradient }}>
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-4 border-t-transparent rounded-full animate-spin" style={{ borderColor: `${themeColors.button} transparent ${themeColors.button} ${themeColors.button}` }}></div>
-          <p className="text-gray-600 font-medium">Loading wallet...</p>
-        </div>
-      </div>
-    );
+    return <LogoLoader />;
   }
 
   return (

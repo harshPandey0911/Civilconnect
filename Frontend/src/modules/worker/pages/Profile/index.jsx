@@ -6,6 +6,7 @@ import { workerTheme as themeColors, vendorTheme } from '../../../../theme';
 import { workerAuthService } from '../../../../services/authService';
 import Header from '../../components/layout/Header';
 import BottomNav from '../../components/layout/BottomNav';
+import LogoLoader from '../../../../components/common/LogoLoader';
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -125,14 +126,7 @@ const Profile = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen" style={{ background: themeColors.backgroundGradient }}>
-        <div className="flex flex-col items-center gap-3">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: themeColors.button }}></div>
-          <p className="text-gray-600 text-sm">Loading profile...</p>
-        </div>
-      </div>
-    );
+    return <LogoLoader />;
   }
 
   if (error && !profile) {

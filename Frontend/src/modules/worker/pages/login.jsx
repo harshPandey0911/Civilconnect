@@ -5,6 +5,7 @@ import { toast } from 'react-hot-toast';
 import { themeColors } from '../../../theme';
 import { workerAuthService } from '../../../services/authService';
 import Logo from '../../../components/common/Logo';
+import LogoLoader from '../../../components/common/LogoLoader';
 
 const WorkerLogin = () => {
   const navigate = useNavigate();
@@ -189,7 +190,9 @@ const WorkerLogin = () => {
                   }}
                 >
                   <span className="absolute inset-0 w-full h-full bg-white/10 group-hover:translate-x-full transition-transform duration-700 -translate-x-full" />
-                  {isLoading ? 'Sending OTP...' : (
+                  {isLoading ? (
+                    <LogoLoader fullScreen={false} size="w-6 h-6" />
+                  ) : (
                     <span className="flex items-center relative z-10">
                       Continue to Jobs
                       <FiArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
@@ -260,8 +263,10 @@ const WorkerLogin = () => {
                     }}
                   >
                     <span className="absolute inset-0 w-full h-full bg-white/10 group-hover:translate-x-full transition-transform duration-700 -translate-x-full" />
-                    {isLoading ? 'Verifying...' : (
-                      <span className="flex items-center relative z-10">
+                    {isLoading ? (
+                      <LogoLoader fullScreen={false} size="w-6 h-6" />
+                    ) : (
+                      <span className="relative z-10 flex items-center justify-center">
                         Login & View Tasks
                       </span>
                     )}

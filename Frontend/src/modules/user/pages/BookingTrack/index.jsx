@@ -7,6 +7,7 @@ import { bookingService } from '../../../../services/bookingService';
 import { paymentService } from '../../../../services/paymentService';
 import { toast } from 'react-hot-toast';
 import { useAppNotifications } from '../../../../hooks/useAppNotifications';
+import LogoLoader from '../../../../components/common/LogoLoader';
 
 
 const toAssetUrl = (url) => {
@@ -559,7 +560,7 @@ const BookingTrack = () => {
     </OverlayView>
   ), [animatedLocation, heading]);
 
-  if (!isLoaded || loading) return <div className="h-screen bg-white flex items-center justify-center"><div className="w-8 h-8 border-4 border-teal-600 border-t-transparent rounded-full animate-spin"></div></div>;
+  if (!isLoaded || loading) return <LogoLoader />;
 
   // Determine active provider based on priority: Worker -> Assigned -> Vendor
   const provider = booking?.workerId || booking?.assignedTo || booking?.vendorId || {};

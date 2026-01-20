@@ -4,6 +4,7 @@ import { FiArrowLeft, FiChevronRight, FiLoader } from 'react-icons/fi';
 import { MdAccountBalanceWallet } from 'react-icons/md';
 import { toast } from 'react-hot-toast';
 import { walletService } from '../../../../services/walletService';
+import LogoLoader from '../../../../components/common/LogoLoader';
 
 const Wallet = () => {
   const navigate = useNavigate();
@@ -101,9 +102,9 @@ const Wallet = () => {
           <h3 className="text-base font-bold text-black mb-3">Wallet Activity</h3>
           <div className="space-y-0">
             {loading ? (
-              <div className="text-center py-8">
-                <FiLoader className="w-8 h-8 text-gray-400 animate-spin mx-auto mb-2" />
-                <p className="text-sm text-gray-500">Loading transactions...</p>
+              <div className="text-center py-20">
+                <LogoLoader fullScreen={false} />
+                <p className="text-sm text-gray-500 mt-4">Loading transactions...</p>
               </div>
             ) : transactions.length === 0 ? (
               <div className="text-center py-8">

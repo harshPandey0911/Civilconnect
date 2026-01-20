@@ -4,6 +4,7 @@ import { FiUsers, FiPlus, FiEdit2, FiTrash2, FiSearch, FiUser, FiBriefcase, FiPh
 import { vendorTheme as themeColors } from '../../../../theme';
 import Header from '../../components/layout/Header';
 import BottomNav from '../../components/layout/BottomNav';
+import LogoLoader from '../../../../components/common/LogoLoader';
 import { getWorkers, deleteWorker } from '../../services/workerService';
 
 const WorkersList = () => {
@@ -131,9 +132,29 @@ const WorkersList = () => {
 
         {/* Workers List */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center p-12">
-            <div className="w-10 h-10 border-4 border-gray-200 border-t-transparent rounded-full animate-spin" style={{ borderTopColor: themeColors.button }}></div>
-            <p className="mt-4 text-gray-500 font-medium">Loading workers...</p>
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm animate-pulse">
+                <div className="flex justify-between mb-4 pb-4 border-b border-slate-50">
+                  <div className="flex gap-3">
+                    <div className="w-12 h-12 bg-slate-100 rounded-full shrink-0"></div>
+                    <div className="space-y-2 py-1">
+                      <div className="h-4 w-32 bg-slate-100 rounded"></div>
+                      <div className="h-6 w-20 bg-slate-100 rounded-full"></div>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <div className="w-8 h-8 bg-slate-100 rounded-lg"></div>
+                    <div className="w-8 h-8 bg-slate-100 rounded-lg"></div>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div className="h-4 w-full bg-slate-100 rounded"></div>
+                  <div className="h-4 w-3/4 bg-slate-100 rounded"></div>
+                  <div className="h-8 w-1/2 bg-slate-100 rounded-lg mt-2"></div>
+                </div>
+              </div>
+            ))}
           </div>
         ) : filteredWorkers.length === 0 ? (
           <div

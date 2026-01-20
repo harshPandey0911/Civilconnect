@@ -164,8 +164,24 @@ const Notifications = () => {
         )}
 
         {loading ? (
-          <div className="flex justify-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: themeColors.button }}></div>
+          <div className="space-y-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="bg-white rounded-2xl p-4 shadow-sm border border-slate-50 animate-pulse">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-slate-100 shrink-0"></div>
+                  <div className="flex-1 space-y-3 py-1">
+                    <div className="flex justify-between items-start">
+                      <div className="h-4 w-32 bg-slate-100 rounded"></div>
+                      <div className="h-3 w-16 bg-slate-100 rounded"></div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="h-3 w-full bg-slate-100 rounded"></div>
+                      <div className="h-3 w-2/3 bg-slate-100 rounded"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         ) : filteredNotifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">

@@ -4,6 +4,7 @@ import { FiArrowLeft, FiClock, FiMapPin, FiCheckCircle, FiXCircle } from 'react-
 import { toast } from 'react-hot-toast';
 import Header from '../../components/layout/Header';
 import { vendorTheme as themeColors } from '../../../../theme';
+import LogoLoader from '../../../../components/common/LogoLoader';
 import { vendorDashboardService } from '../../services/dashboardService';
 import { acceptBooking, rejectBooking, getBookings } from '../../services/bookingService';
 import { useSocket } from '../../../../context/SocketContext';
@@ -182,8 +183,9 @@ const BookingAlerts = () => {
 
       <main className="px-4 py-4 space-y-4">
         {loading ? (
-          <div className="flex justify-center pt-20">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <div className="py-20 text-center">
+            <LogoLoader fullScreen={false} />
+            <p className="mt-4 text-gray-500 font-medium">Loading alerts...</p>
           </div>
         ) : alerts.length === 0 ? (
           <div className="text-center pt-20 px-6">

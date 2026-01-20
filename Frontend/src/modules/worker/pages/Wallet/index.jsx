@@ -5,6 +5,7 @@ import Header from '../../components/layout/Header';
 import BottomNav from '../../components/layout/BottomNav';
 import workerWalletService from '../../../../services/workerWalletService';
 import { toast } from 'react-hot-toast';
+import LogoLoader from '../../../../components/common/LogoLoader';
 
 const Wallet = () => {
   const [loading, setLoading] = useState(true);
@@ -110,14 +111,7 @@ const Wallet = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: themeColors.backgroundGradient }}>
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-4 border-t-transparent rounded-full animate-spin" style={{ borderColor: `${themeColors.button} transparent ${themeColors.button} ${themeColors.button}` }}></div>
-          <p className="text-gray-600 font-medium">Loading wallet...</p>
-        </div>
-      </div>
-    );
+    return <LogoLoader />;
   }
 
   return (

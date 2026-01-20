@@ -183,7 +183,25 @@ const Notifications = () => {
 
         {/* Notifications List */}
         {loading ? (
-          <div className="text-center py-10 text-gray-500">Loading...</div>
+          <div className="space-y-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="bg-white rounded-2xl p-4 shadow-sm border border-slate-50 animate-pulse">
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 rounded-full bg-slate-100 shrink-0"></div>
+                  <div className="flex-1 space-y-3 py-1">
+                    <div className="flex justify-between items-start">
+                      <div className="h-4 w-32 bg-slate-100 rounded"></div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="h-3 w-full bg-slate-100 rounded"></div>
+                      <div className="h-3 w-2/3 bg-slate-100 rounded"></div>
+                    </div>
+                    <div className="h-2 w-16 bg-slate-50 rounded"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         ) : filteredNotifications.length === 0 ? (
           <div
             className="bg-white rounded-xl p-8 text-center shadow-md"

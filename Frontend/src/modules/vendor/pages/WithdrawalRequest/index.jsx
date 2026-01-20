@@ -6,6 +6,7 @@ import Header from '../../components/layout/Header';
 import BottomNav from '../../components/layout/BottomNav';
 import { requestWithdrawal, getWalletBalance, getWithdrawalHistory } from '../../services/walletService';
 import { toast } from 'react-hot-toast';
+import LogoLoader from '../../../../components/common/LogoLoader';
 
 const WithdrawalRequest = () => {
   const navigate = useNavigate();
@@ -442,7 +443,7 @@ const WithdrawalRequest = () => {
           }}
         >
           {loading ? (
-            <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
+            <LogoLoader fullScreen={false} size="w-6 h-6" />
           ) : (
             <>
               Confirm Payout

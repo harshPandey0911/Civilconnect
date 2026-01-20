@@ -10,6 +10,7 @@ import { SkeletonProfileHeader, SkeletonDashboardStats, SkeletonList } from '../
 import OptimizedImage from '../../../../components/common/OptimizedImage';
 import { useSocket } from '../../../../context/SocketContext';
 import WorkerJobAlertModal from '../../components/bookings/WorkerJobAlertModal';
+import LogoLoader from '../../../../components/common/LogoLoader';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -171,15 +172,13 @@ const Dashboard = () => {
   if (loading) {
     return (
       <div className="min-h-screen pb-20" style={{ background: themeColors.backgroundGradient }}>
-        {/* Render Header immediately for perceived performance */}
-        <Header title="Dashboard" showBack={false} notificationCount={stats.pendingJobs} />
-
-        <main className="pt-0">
+        <Header title="Dashboard" showBack={false} />
+        <main className="px-4 py-4 space-y-6">
           <SkeletonProfileHeader />
           <SkeletonDashboardStats />
-          <div className="px-4 pt-4">
-            <div className="h-6 w-32 bg-gray-200/50 rounded mb-4 animate-pulse"></div>
-            <SkeletonList count={2} />
+          <div className="space-y-4">
+            <div className="h-6 w-32 bg-slate-200 rounded animate-pulse"></div>
+            <SkeletonList count={3} />
           </div>
         </main>
       </div>

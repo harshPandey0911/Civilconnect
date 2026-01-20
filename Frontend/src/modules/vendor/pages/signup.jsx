@@ -3,7 +3,8 @@ import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { FiUser, FiMail, FiPhone, FiFileText, FiUpload, FiX, FiArrowRight, FiChevronLeft, FiCheckCircle } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 import { themeColors } from '../../../theme';
-import { sendOTP as sendVendorOTP, register } from '../services/authService';
+import { register, sendOTP as sendVendorOTP } from '../services/authService';
+import LogoLoader from '../../../components/common/LogoLoader';
 import Logo from '../../../components/common/Logo';
 
 const VendorSignup = () => {
@@ -486,10 +487,7 @@ const VendorSignup = () => {
                 >
                   <span className="absolute inset-0 w-full h-full bg-white/10 group-hover:translate-x-full transition-transform duration-700 -translate-x-full" />
                   {isLoading ? (
-                    <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
+                    <LogoLoader fullScreen={false} size="w-6 h-6" />
                   ) : (
                     <span className="flex items-center relative z-10">
                       {verificationToken ? 'Finish Application' : 'Proceed to Verify'}
@@ -558,8 +556,12 @@ const VendorSignup = () => {
                     style={{ backgroundColor: brandColor, boxShadow: `0 10px 15px -3px ${brandColor}4D` }}
                   >
                     <span className="absolute inset-0 w-full h-full bg-white/10 group-hover:translate-x-full transition-transform duration-700 -translate-x-full" />
-                    <span className="relative z-10">
-                      {isLoading ? 'Processing...' : 'Verify & Register'}
+                    <span className="relative z-10 flex items-center justify-center">
+                      {isLoading ? (
+                        <LogoLoader fullScreen={false} size="w-6 h-6" />
+                      ) : (
+                        'Verify & Register'
+                      )}
                     </span>
                   </button>
                 </div>
