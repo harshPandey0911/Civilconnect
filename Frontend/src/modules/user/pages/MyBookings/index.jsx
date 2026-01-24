@@ -152,201 +152,224 @@ const MyBookings = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] pb-24">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-lg border-b border-slate-100 sticky top-0 z-30 transition-all">
-        <div className="px-4 pt-4 pb-3 flex items-center justify-between">
+    <div className="min-h-screen pb-24 relative bg-white">
+      {/* Refined Brand Mesh Gradient Background */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <div className="absolute inset-0"
+          style={{
+            background: `
+              radial-gradient(at 0% 0%, ${themeColors?.brand?.teal || '#347989'}25 0%, transparent 70%),
+              radial-gradient(at 100% 0%, ${themeColors?.brand?.yellow || '#D68F35'}20 0%, transparent 70%),
+              radial-gradient(at 100% 100%, ${themeColors?.brand?.orange || '#BB5F36'}15 0%, transparent 75%),
+              radial-gradient(at 0% 100%, ${themeColors?.brand?.teal || '#347989'}10 0%, transparent 70%),
+              radial-gradient(at 50% 50%, ${themeColors?.brand?.teal || '#347989'}03 0%, transparent 100%),
+              #FFFFFF
+            `
+          }}
+        />
+        {/* Elegant Dot Grid Pattern */}
+        <div className="absolute inset-0 opacity-[0.04]"
+          style={{
+            backgroundImage: `radial-gradient(${themeColors?.brand?.teal || '#347989'} 0.8px, transparent 0.8px)`,
+            backgroundSize: '32px 32px'
+          }}
+        />
+      </div>
+
+      <div className="relative z-10">
+        {/* Modern Glassmorphism Header */}
+        <header className="sticky top-0 z-40 backdrop-blur-xl bg-white/40 border-b border-black/[0.03] px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate(-1)}
-              className="p-2.5 hover:bg-slate-50 active:bg-slate-100 rounded-full transition-colors text-slate-700"
+              className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm border border-black/[0.02]"
             >
-              <FiArrowLeft className="w-5 h-5" />
+              <FiArrowLeft className="w-5 h-5 text-gray-800" />
             </button>
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight">My Bookings</h1>
+            <h1 className="text-xl font-extrabold text-gray-900 tracking-tight">My Bookings</h1>
           </div>
+          <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm border border-black/[0.02] relative">
+            <NotificationBell />
+          </div>
+        </header>
 
-          {/* Notification Bell with Vendor Style */}
-          <NotificationBell />
-        </div>
-      </header>
-
-      {/* Filter Tabs */}
-      <div className="bg-white border-b border-slate-100 sticky top-[61px] z-20 shadow-[0_4px_20px_-16px_rgba(0,0,0,0.1)]">
-        <div className="flex overflow-x-auto px-4 py-3 gap-2.5 no-scrollbar scroll-smooth">
-          {[
-            { id: 'all', label: 'All Bookings' },
-            { id: 'confirmed', label: 'Confirmed' },
-            { id: 'in-progress', label: 'In Progress' },
-            { id: 'completed', label: 'Completed' },
-            { id: 'cancelled', label: 'Cancelled' },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setFilter(tab.id)}
-              className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all duration-200 border ${filter === tab.id
-                ? 'border-transparent text-white shadow-lg shadow-blue-500/25 active:scale-95'
-                : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 hover:border-slate-300'
-                }`}
-              style={filter === tab.id ? { backgroundColor: themeColors.button } : {}}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Bookings List */}
-      <main className="px-4 py-5 max-w-lg mx-auto w-full">
-        {loading ? (
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm animate-pulse">
-                <div className="flex justify-between mb-4 border-b border-slate-100 pb-4">
-                  <div className="space-y-2">
-                    <div className="h-3 w-20 bg-slate-200 rounded"></div>
-                    <div className="h-5 w-48 bg-slate-200 rounded"></div>
-                  </div>
-                  <div className="h-6 w-24 bg-slate-200 rounded-full"></div>
-                </div>
-                <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-4 mb-5 p-3 rounded-xl bg-slate-50 border border-slate-200">
-                  <div className="w-8 h-8 rounded-full bg-slate-200"></div>
-                  <div className="space-y-1.5 py-1">
-                    <div className="h-2.5 w-16 bg-slate-200 rounded"></div>
-                    <div className="h-3.5 w-32 bg-slate-200 rounded"></div>
-                  </div>
-                  <div className="w-8 h-8 rounded-full bg-slate-200"></div>
-                  <div className="space-y-1.5 py-1">
-                    <div className="h-2.5 w-16 bg-slate-200 rounded"></div>
-                    <div className="h-3.5 w-40 bg-slate-200 rounded"></div>
-                  </div>
-                </div>
-                <div className="flex justify-between pt-4 border-t border-slate-200">
-                  <div className="space-y-1">
-                    <div className="h-2.5 w-16 bg-slate-200 rounded"></div>
-                    <div className="h-6 w-24 bg-slate-200 rounded"></div>
-                  </div>
-                  <div className="h-9 w-28 bg-slate-200 rounded-lg"></div>
-                </div>
-              </div>
+        {/* Filter Tabs */}
+        <div className="bg-white border-b border-slate-100 sticky top-[61px] z-20 shadow-[0_4px_20px_-16px_rgba(0,0,0,0.1)]">
+          <div className="flex overflow-x-auto px-4 py-3 gap-2.5 no-scrollbar scroll-smooth">
+            {[
+              { id: 'all', label: 'All Bookings' },
+              { id: 'confirmed', label: 'Confirmed' },
+              { id: 'in-progress', label: 'In Progress' },
+              { id: 'completed', label: 'Completed' },
+              { id: 'cancelled', label: 'Cancelled' },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setFilter(tab.id)}
+                className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all duration-200 border ${filter === tab.id
+                  ? 'border-transparent text-white shadow-lg shadow-blue-500/25 active:scale-95'
+                  : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 hover:border-slate-300'
+                  }`}
+                style={filter === tab.id ? { backgroundColor: themeColors.button } : {}}
+              >
+                {tab.label}
+              </button>
             ))}
           </div>
-        ) : bookings.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="flex flex-col items-center justify-center py-24 text-center px-6"
-          >
-            <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6 border border-slate-100 shadow-sm">
-              <FiClock className="w-8 h-8 text-slate-300" />
-            </div>
-            <h3 className="text-slate-900 text-lg font-bold mb-2">No Bookings Found</h3>
-            <p className="text-slate-500 text-sm max-w-xs leading-relaxed">
-              {filter === 'all'
-                ? "Looks like you haven't booked any services yet. Explore our services to get started!"
-                : `You don't have any ${filter.replace('-', ' ')} bookings at the moment.`}
-            </p>
-          </motion.div>
-        ) : (
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={{
-              hidden: { opacity: 0 },
-              visible: {
-                opacity: 1,
-                transition: { staggerChildren: 0.1 }
-              }
-            }}
-            className="space-y-4"
-          >
-            {bookings.map((booking) => (
-              <motion.div
-                key={booking._id || booking.id}
-                variants={{
-                  hidden: { opacity: 0, y: 20 },
-                  visible: {
-                    opacity: 1,
-                    y: 0,
-                    transition: { type: "spring", stiffness: 100, damping: 15 }
-                  }
-                }}
-                onClick={() => handleBookingClick(booking)}
-                className={`group relative bg-white rounded-2xl p-5 border border-slate-200 border-l-4 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.08)] hover:border-blue-300 active:scale-[0.99] transition-all duration-300 cursor-pointer overflow-hidden ${getStatusBorderColor(booking.status)}`}
-              >
-                {/* Decorative Elements */}
-                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-slate-50 via-transparent to-transparent -z-0 opacity-50" />
+        </div>
 
-                {/* Header Section */}
-                <div className="relative z-10 flex items-start justify-between mb-4 border-b border-slate-100 pb-4">
-                  <div className="pr-4">
-                    <p className="text-[10px] font-bold tracking-wider text-slate-400 uppercase mb-1.5 flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
-                      #{booking.bookingNumber || (booking._id || booking.id).substring(0, 8)}
-                    </p>
-                    <h3 className="text-lg font-bold text-slate-800 leading-tight line-clamp-1 group-hover:text-blue-600 transition-colors">
-                      {booking.serviceName || booking.serviceCategory || 'Service Request'}
-                    </h3>
+        {/* Bookings List */}
+        <main className="px-4 py-5 max-w-lg mx-auto w-full">
+          {loading ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm animate-pulse">
+                  <div className="flex justify-between mb-4 border-b border-slate-100 pb-4">
+                    <div className="space-y-2">
+                      <div className="h-3 w-20 bg-slate-200 rounded"></div>
+                      <div className="h-5 w-48 bg-slate-200 rounded"></div>
+                    </div>
+                    <div className="h-6 w-24 bg-slate-200 rounded-full"></div>
                   </div>
-
-                  {/* Status Badge */}
-                  <div className={`px-3 py-1 pb-1.5 rounded-full border ring-1 ring-inset flex items-center gap-1.5 shadow-sm ${getStatusColor(booking.status)}`}>
-                    {getStatusIcon(booking.status)}
-                    <span className="text-[11px] font-bold uppercase tracking-wide">
-                      {getStatusLabel(booking.status)}
-                    </span>
+                  <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-4 mb-5 p-3 rounded-xl bg-slate-50 border border-slate-200">
+                    <div className="w-8 h-8 rounded-full bg-slate-200"></div>
+                    <div className="space-y-1.5 py-1">
+                      <div className="h-2.5 w-16 bg-slate-200 rounded"></div>
+                      <div className="h-3.5 w-32 bg-slate-200 rounded"></div>
+                    </div>
+                    <div className="w-8 h-8 rounded-full bg-slate-200"></div>
+                    <div className="space-y-1.5 py-1">
+                      <div className="h-2.5 w-16 bg-slate-200 rounded"></div>
+                      <div className="h-3.5 w-40 bg-slate-200 rounded"></div>
+                    </div>
+                  </div>
+                  <div className="flex justify-between pt-4 border-t border-slate-200">
+                    <div className="space-y-1">
+                      <div className="h-2.5 w-16 bg-slate-200 rounded"></div>
+                      <div className="h-6 w-24 bg-slate-200 rounded"></div>
+                    </div>
+                    <div className="h-9 w-28 bg-slate-200 rounded-lg"></div>
                   </div>
                 </div>
+              ))}
+            </div>
+          ) : bookings.length === 0 ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex flex-col items-center justify-center py-24 text-center px-6"
+            >
+              <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6 border border-slate-100 shadow-sm">
+                <FiClock className="w-8 h-8 text-slate-300" />
+              </div>
+              <h3 className="text-slate-900 text-lg font-bold mb-2">No Bookings Found</h3>
+              <p className="text-slate-500 text-sm max-w-xs leading-relaxed">
+                {filter === 'all'
+                  ? "Looks like you haven't booked any services yet. Explore our services to get started!"
+                  : `You don't have any ${filter.replace('-', ' ')} bookings at the moment.`}
+              </p>
+            </motion.div>
+          ) : (
+            <motion.div
+              initial="hidden"
+              animate="visible"
+              variants={{
+                hidden: { opacity: 0 },
+                visible: {
+                  opacity: 1,
+                  transition: { staggerChildren: 0.1 }
+                }
+              }}
+              className="space-y-4"
+            >
+              {bookings.map((booking) => (
+                <motion.div
+                  key={booking._id || booking.id}
+                  variants={{
+                    hidden: { opacity: 0, y: 20 },
+                    visible: {
+                      opacity: 1,
+                      y: 0,
+                      transition: { type: "spring", stiffness: 100, damping: 15 }
+                    }
+                  }}
+                  onClick={() => handleBookingClick(booking)}
+                  className={`group relative bg-white rounded-2xl p-5 border border-slate-200 border-l-4 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.08)] hover:border-blue-300 active:scale-[0.99] transition-all duration-300 cursor-pointer overflow-hidden ${getStatusBorderColor(booking.status)}`}
+                >
+                  {/* Decorative Elements */}
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-slate-50 via-transparent to-transparent -z-0 opacity-50" />
 
-                {/* Details Grid */}
-                <div className="relative z-10 grid grid-cols-[auto_1fr] gap-x-3 gap-y-4 mb-5 p-3 rounded-xl bg-slate-50/50 border border-slate-200">
-                  {/* Schedule */}
-                  <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center shrink-0 shadow-sm">
-                    <FiCalendar className="w-4 h-4 text-blue-500" />
-                  </div>
-                  <div className="flex flex-col justify-center">
-                    <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Scheduled For</p>
-                    <div className="flex items-center gap-1.5 text-sm font-bold text-slate-700">
-                      <span>{formatDate(booking.scheduledDate)}</span>
-                      <span className="text-slate-300">•</span>
-                      <span>{booking.scheduledTime || booking.timeSlot?.start || 'N/A'}</span>
+                  {/* Header Section */}
+                  <div className="relative z-10 flex items-start justify-between mb-4 border-b border-slate-100 pb-4">
+                    <div className="pr-4">
+                      <p className="text-[10px] font-bold tracking-wider text-slate-400 uppercase mb-1.5 flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                        #{booking.bookingNumber || (booking._id || booking.id).substring(0, 8)}
+                      </p>
+                      <h3 className="text-lg font-bold text-slate-800 leading-tight line-clamp-1 group-hover:text-blue-600 transition-colors">
+                        {booking.serviceName || booking.serviceCategory || 'Service Request'}
+                      </h3>
+                    </div>
+
+                    {/* Status Badge */}
+                    <div className={`px-3 py-1 pb-1.5 rounded-full border ring-1 ring-inset flex items-center gap-1.5 shadow-sm ${getStatusColor(booking.status)}`}>
+                      {getStatusIcon(booking.status)}
+                      <span className="text-[11px] font-bold uppercase tracking-wide">
+                        {getStatusLabel(booking.status)}
+                      </span>
                     </div>
                   </div>
 
-                  {/* Location */}
-                  <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center shrink-0 shadow-sm">
-                    <FiMapPin className="w-4 h-4 text-rose-500" />
-                  </div>
-                  <div className="flex flex-col justify-center min-w-0">
-                    <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Location</p>
-                    <p className="text-sm font-medium text-slate-700 truncate w-full">
-                      {getAddressString(booking.address)}
-                    </p>
-                  </div>
-                </div>
+                  {/* Details Grid */}
+                  <div className="relative z-10 grid grid-cols-[auto_1fr] gap-x-3 gap-y-4 mb-5 p-3 rounded-xl bg-slate-50/50 border border-slate-200">
+                    {/* Schedule */}
+                    <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center shrink-0 shadow-sm">
+                      <FiCalendar className="w-4 h-4 text-blue-500" />
+                    </div>
+                    <div className="flex flex-col justify-center">
+                      <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Scheduled For</p>
+                      <div className="flex items-center gap-1.5 text-sm font-bold text-slate-700">
+                        <span>{formatDate(booking.scheduledDate)}</span>
+                        <span className="text-slate-300">•</span>
+                        <span>{booking.scheduledTime || booking.timeSlot?.start || 'N/A'}</span>
+                      </div>
+                    </div>
 
-                {/* Footer Section */}
-                <div className="relative z-10 flex items-center justify-between pt-4 border-t border-slate-200">
-                  <div>
-                    <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-0.5">Total Amount</p>
-                    <p className="text-xl font-bold text-slate-900 flex items-baseline gap-0.5">
-                      <span className="text-sm font-semibold text-slate-400">₹</span>
-                      {(booking.finalAmount || booking.totalAmount || 0).toLocaleString('en-IN')}
-                    </p>
+                    {/* Location */}
+                    <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center shrink-0 shadow-sm">
+                      <FiMapPin className="w-4 h-4 text-rose-500" />
+                    </div>
+                    <div className="flex flex-col justify-center min-w-0">
+                      <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Location</p>
+                      <p className="text-sm font-medium text-slate-700 truncate w-full">
+                        {getAddressString(booking.address)}
+                      </p>
+                    </div>
                   </div>
 
-                  <button
-                    className="flex items-center gap-1.5 pl-4 pr-3 py-2 rounded-lg bg-indigo-50 border border-indigo-100 text-indigo-600 font-bold text-sm hover:bg-indigo-600 hover:border-indigo-600 hover:text-white transition-all shadow-sm active:scale-95"
-                  >
-                    View Details
-                    <FiChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
-        )}
-      </main>
+                  {/* Footer Section */}
+                  <div className="relative z-10 flex items-center justify-between pt-4 border-t border-slate-200">
+                    <div>
+                      <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-0.5">Total Amount</p>
+                      <p className="text-xl font-bold text-slate-900 flex items-baseline gap-0.5">
+                        <span className="text-sm font-semibold text-slate-400">₹</span>
+                        {(booking.finalAmount || booking.totalAmount || 0).toLocaleString('en-IN')}
+                      </p>
+                    </div>
+
+                    <button
+                      className="flex items-center gap-1.5 pl-4 pr-3 py-2 rounded-lg bg-indigo-50 border border-indigo-100 text-indigo-600 font-bold text-sm hover:bg-indigo-600 hover:border-indigo-600 hover:text-white transition-all shadow-sm active:scale-95"
+                    >
+                      View Details
+                      <FiChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
+        </main>
+      </div>
     </div>
   );
 };

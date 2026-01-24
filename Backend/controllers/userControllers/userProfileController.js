@@ -31,6 +31,7 @@ const getProfile = async (req, res) => {
         addresses: user.addresses || [],
         plans: user.plans || {},
         settings: user.settings || {},
+        wallet: user.wallet || { balance: 0 },
         createdAt: user.createdAt,
         updatedAt: user.updatedAt
       }
@@ -61,6 +62,9 @@ const updateProfile = async (req, res) => {
     const userId = req.user.id;
     const { name, email, addresses, profilePhoto, settings } = req.body;
 
+    console.log('[Profile Update] Request for user:', userId);
+    console.log('[Profile Update] Data received:', { name, email, profilePhoto: profilePhoto ? 'provided' : 'not provided' });
+
     const user = await User.findById(userId);
 
     if (!user) {
@@ -70,18 +74,29 @@ const updateProfile = async (req, res) => {
       });
     }
 
+    // Build update object
+    const updateData = {};
+
     // Update fields
-    if (name) user.name = name.trim();
-    if (email) {
-      // Check if email is already taken by another user
-      const existingUser = await User.findOne({ email: email.toLowerCase(), _id: { $ne: userId } });
-      if (existingUser) {
-        return res.status(400).json({
-          success: false,
-          message: 'Email already in use'
-        });
+    if (name && name.trim()) {
+      updateData.name = name.trim();
+    }
+
+    if (email !== undefined) {
+      if (email && email.trim()) {
+        // Check if email is already taken by another user
+        const existingUser = await User.findOne({ email: email.toLowerCase(), _id: { $ne: userId } });
+        if (existingUser) {
+          return res.status(400).json({
+            success: false,
+            message: 'Email already in use'
+          });
+        }
+        updateData.email = email.toLowerCase();
+      } else {
+        // Allow clearing email
+        updateData.email = null;
       }
-      user.email = email.toLowerCase();
     }
 
     // Update profile photo - upload to Cloudinary if it's a base64 string
@@ -89,41 +104,54 @@ const updateProfile = async (req, res) => {
       if (profilePhoto.startsWith('data:')) {
         const uploadRes = await cloudinaryService.uploadFile(profilePhoto, { folder: 'users/profiles' });
         if (uploadRes.success) {
-          user.profilePhoto = uploadRes.url;
+          updateData.profilePhoto = uploadRes.url;
         }
       } else {
-        user.profilePhoto = profilePhoto;
+        updateData.profilePhoto = profilePhoto;
       }
     }
 
     // Update addresses
     if (addresses && Array.isArray(addresses)) {
-      user.addresses = addresses;
+      updateData.addresses = addresses;
     }
 
     // Update settings
     if (settings) {
-      if (settings.notifications !== undefined) user.settings.notifications = settings.notifications;
-      if (settings.language) user.settings.language = settings.language;
+      if (settings.notifications !== undefined) {
+        updateData['settings.notifications'] = settings.notifications;
+      }
+      if (settings.language) {
+        updateData['settings.language'] = settings.language;
+      }
     }
 
-    await user.save();
+    console.log('[Profile Update] Updating with:', updateData);
+
+    // Use findByIdAndUpdate for atomic update
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    ).select('-password -otp -__v');
+
+    console.log('[Profile Update] Updated user:', updatedUser?.name, updatedUser?.email);
 
     res.status(200).json({
       success: true,
       message: 'Profile updated successfully',
       user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        isPhoneVerified: user.isPhoneVerified,
-        isEmailVerified: user.isEmailVerified,
-        profilePhoto: user.profilePhoto || null,
-        addresses: user.addresses || [],
-        addresses: user.addresses || [],
-        plans: user.plans || {},
-        settings: user.settings || {}
+        id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        phone: updatedUser.phone,
+        isPhoneVerified: updatedUser.isPhoneVerified,
+        isEmailVerified: updatedUser.isEmailVerified,
+        profilePhoto: updatedUser.profilePhoto || null,
+        addresses: updatedUser.addresses || [],
+        plans: updatedUser.plans || {},
+        settings: updatedUser.settings || {},
+        wallet: updatedUser.wallet || { balance: 0 }
       }
     });
   } catch (error) {
@@ -139,4 +167,3 @@ module.exports = {
   getProfile,
   updateProfile
 };
-

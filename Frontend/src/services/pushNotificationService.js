@@ -191,7 +191,7 @@ async function registerFCMToken(userType = 'user', forceUpdate = false) {
 }
 
 /**
- * Remove FCM token from backend (removes tokens for current platform)
+ * Remove FCM token from backend (removes specific token for current device)
  * @param {string} userType - 'user', 'vendor', or 'worker'
  */
 async function removeFCMToken(userType = 'user') {
@@ -199,67 +199,61 @@ async function removeFCMToken(userType = 'user') {
     // Detect platform automatically
     const platform = getPlatformType();
     const storageKey = `fcm_token_${userType}_${platform}`;
+    const tokenToRemove = localStorage.getItem(storageKey);
 
-    console.log(`[FCM] Removing ${platform} tokens for ${userType}...`);
+    if (!tokenToRemove) {
+      // console.log('[FCM] No token found in localStorage to remove');
+      return;
+    }
+
+    // console.log(`[FCM] Removing ${platform} token for ${userType}...`);
 
     // Determine API endpoint based on user type
     let endpoint;
     let authTokenKey;
     switch (userType) {
       case 'vendor':
-        endpoint = '/vendors/fcm-tokens/remove-all';
+        endpoint = '/vendors/fcm-tokens/remove';
         authTokenKey = 'vendorAccessToken';
         break;
       case 'worker':
-        endpoint = '/workers/fcm-tokens/remove-all';
+        endpoint = '/workers/fcm-tokens/remove';
         authTokenKey = 'workerAccessToken';
         break;
       default:
-        endpoint = '/users/fcm-tokens/remove-all';
+        endpoint = '/users/fcm-tokens/remove';
         authTokenKey = 'accessToken';
     }
 
     const authToken = localStorage.getItem(authTokenKey);
-    if (!authToken) {
-      localStorage.removeItem(storageKey);
-      return;
+    // If we have an auth token, try to remove from backend
+    if (authToken) {
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+
+      // Call remove endpoint with specific token
+      await fetch(`${baseUrl}${endpoint}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({
+          token: tokenToRemove,
+          platform: platform
+        })
+      });
+      console.log(`[FCM] ✅ Token removed from backend`);
     }
 
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-
-    // Call remove-all with detected platform
-    await fetch(`${baseUrl}${endpoint}`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authToken}`
-      },
-      body: JSON.stringify({
-        platform: platform
-      })
-    });
-
+    // Always remove from local storage
     localStorage.removeItem(storageKey);
-    console.log(`[FCM] ✅ All ${platform} FCM tokens removed on logout`);
+    console.log(`[FCM] Token cleared from localStorage`);
   } catch (error) {
-    console.error('[FCM] Error removing FCM tokens:', error);
-  }
-}
-
-/**
- * Notify Flutter WebView about logout to remove mobile FCM token
- * @param {string} userType - 'user', 'vendor', or 'worker'
- */
-function notifyFlutterLogout(userType = 'user') {
-  try {
-    if (window.flutter_inappwebview && window.flutter_inappwebview.callHandler) {
-      console.log('[FCM] Notifying Flutter about logout...');
-      window.flutter_inappwebview.callHandler('onUserLogout', JSON.stringify({
-        userType: userType
-      }));
-    }
-  } catch (e) {
-    console.error('[FCM] Error notifying Flutter about logout:', e);
+    console.error('[FCM] Error removing FCM token:', error);
+    // Ensure local cleanup happens even on error
+    const platform = getPlatformType();
+    const storageKey = `fcm_token_${userType}_${platform}`;
+    localStorage.removeItem(storageKey);
   }
 }
 
@@ -282,61 +276,8 @@ function setupForegroundNotificationHandler(handler) {
     // Use notification fields first, then data fields as fallback (for data-only messages)
     const title = notification.title || data.title || 'New Notification';
     const body = notification.body || data.body || '';
-    const icon = notification.icon || data.icon || '/Homster-logo.png';
+    const icon = notification.icon || data.icon || '/HomeBuddy-header-logo.png';
     const type = data.type || data.notificationType || 'default';
-
-    // Play Sound for foreground notifications
-    // DISABLED: We already play a notification sound via SocketContext for foreground events.
-    /*
-    const audioMap = {
-      new_booking: '/booking-alert.mp3',
-      booking_accepted: '/success.mp3',
-      worker_assigned: '/notification.mp3',
-      job_assigned: '/booking-alert.mp3',
-      booking_completed: '/success.mp3',
-      default: '/notification.mp3'
-    };
-
-    // Attempt playback - interactions requirements may block auto-play
-    try {
-      const audioUrl = audioMap[type] || audioMap['default'];
-      const audio = new Audio(audioUrl);
-      audio.play().catch(e => {
-        // console.log('Audio autoplay blocked:', e)
-      });
-    } catch (err) {
-      // console.log('Audio playback error:', err);
-    }
-    */
-
-    // DISABLED: Show system notification when app is in foreground
-    // Since socket.io already shows in-app notifications, showing both creates duplicates.
-    // System notifications will still appear when app is in background (handled by service worker).
-    /*
-    if ('Notification' in window && Notification.permission === 'granted') {
-      try {
-        const notif = new Notification(title, {
-          body: body,
-          icon: icon,
-          data: data,
-          tag: data.bookingId || `notification-${Date.now()}`,
-          requireInteraction: type === 'new_booking' || type === 'job_assigned',
-          silent: false // Allow system sound if applicable
-        });
-
-        // Handle notification click
-        notif.onclick = () => {
-          window.focus();
-          if (data.link) {
-            window.location.href = data.link;
-          }
-          notif.close();
-        };
-      } catch (e) {
-        // console.error('Error showing native notification:', e);
-      }
-    }
-    */
 
     // Call custom handler (e.g. for toast)
     if (handler) {

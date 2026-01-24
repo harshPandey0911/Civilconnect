@@ -99,30 +99,6 @@ const Home = () => {
   const [homeContent, setHomeContent] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Combined useLayoutEffect - Set background on mount only (optimized)
-  useLayoutEffect(() => {
-    const html = document.documentElement;
-    const body = document.body;
-    const root = document.getElementById('root');
-    const bgStyle = themeColors.backgroundGradient;
-
-    // Set background on all elements (only once on mount)
-    const elements = [html, body, root].filter(Boolean);
-    elements.forEach(el => {
-      if (el && !el.dataset.bgSet) {
-        el.style.backgroundColor = '#ffffff';
-        el.style.background = bgStyle;
-        el.dataset.bgSet = 'true';
-      }
-    });
-
-    // Force immediate visibility (only if needed)
-    if (body && body.style.opacity !== '1') {
-      body.style.opacity = '1';
-      body.style.visibility = 'visible';
-    }
-  }, []); // Empty deps - only run once on mount
-
   // Handle scroll separately (only when needed)
   useEffect(() => {
     if (location.state?.scrollToTop) {
@@ -164,16 +140,11 @@ const Home = () => {
           if (homeContentRes.homeContent) hasData = true;
         }
 
-        // If no data loaded at all, keep loading true to prevent partial render or use error state
-        if (!hasData) {
-          if (categoriesRes.categories?.length === 0 && !homeContentRes.homeContent) {
-            // keep loading
-            return;
-          }
+        if (!hasData && categoriesRes.categories?.length === 0 && !homeContentRes.homeContent) {
+          return;
         }
 
         setLoading(false);
-
       } catch (error) {
         // Silent fail
       }
@@ -298,14 +269,14 @@ const Home = () => {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1, // Stagger effect for top-to-bottom appearance
+        staggerChildren: 0.1,
         delayChildren: 0.1
       }
     }
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: -20 }, // Start slightly above
+    hidden: { opacity: 0, y: -20 },
     visible: {
       opacity: 1,
       y: 0,
@@ -322,34 +293,46 @@ const Home = () => {
   }
 
   return (
-    <div
-      className="min-h-screen pb-20"
-      style={{
-        willChange: 'auto',
-        opacity: 1,
-        visibility: 'visible',
-        background: themeColors.backgroundGradient,
-        backgroundColor: '#EBF8FF', // Light blue fallback
-        minHeight: '100vh',
-        position: 'relative',
-        zIndex: 1
-      }}
-    >
+    <div className="min-h-screen pb-20 relative bg-white">
+      {/* Refined Brand Mesh Gradient Background */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <div className="absolute inset-0"
+          style={{
+            background: `
+              radial-gradient(at 0% 0%, ${themeColors?.brand?.teal || '#347989'}25 0%, transparent 70%),
+              radial-gradient(at 100% 0%, ${themeColors?.brand?.yellow || '#D68F35'}20 0%, transparent 70%),
+              radial-gradient(at 100% 100%, ${themeColors?.brand?.orange || '#BB5F36'}15 0%, transparent 75%),
+              radial-gradient(at 0% 100%, ${themeColors?.brand?.teal || '#347989'}10 0%, transparent 70%),
+              radial-gradient(at 50% 50%, ${themeColors?.brand?.teal || '#347989'}03 0%, transparent 100%),
+              #FFFFFF
+            `
+          }}
+        />
+        {/* Elegant Dot Grid Pattern */}
+        <div className="absolute inset-0 opacity-[0.04]"
+          style={{
+            backgroundImage: `radial-gradient(${themeColors?.brand?.teal || '#347989'} 0.8px, transparent 0.8px)`,
+            backgroundSize: '32px 32px'
+          }}
+        />
+      </div>
+
       <motion.div
+        className="relative z-10"
         initial="hidden"
         animate="visible"
         variants={containerVariants}
       >
         <motion.div
           variants={itemVariants}
-          className="backdrop-blur-md sticky top-0 z-50 border-b border-gray-200 rounded-b-[20px] shadow-sm transition-all duration-300"
-          style={{ backgroundColor: `${themeColors.headerBg}F2` }}
+          className="backdrop-blur-xl sticky top-0 z-50 border-b border-black/[0.03] rounded-b-[24px] shadow-[0_4px_30px_rgba(0,0,0,0.03)] transition-all duration-300"
+          style={{ backgroundColor: 'rgba(255, 255, 255, 0.4)' }}
         >
           <Header
             location={address}
             onLocationClick={handleLocationClick}
           />
-          <div className="px-4 pb-4 pt-1 max-w-lg mx-auto w-full">
+          <div className="px-5 pb-5 pt-1 max-w-lg mx-auto w-full">
             <SearchBar onInputClick={() => setIsSearchOpen(true)} />
           </div>
         </motion.div>

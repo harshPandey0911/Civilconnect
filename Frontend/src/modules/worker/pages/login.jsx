@@ -19,13 +19,6 @@ const WorkerLogin = () => {
   const phoneInputRef = useRef(null);
   const otpInputRefs = useRef([]);
 
-  // Clear any existing worker tokens on page load - REMOVED to fix back button logout issue
-  // useEffect(() => {
-  //   localStorage.removeItem('workerAccessToken');
-  //   localStorage.removeItem('workerRefreshToken');
-  //   localStorage.removeItem('workerData');
-  // }, []);
-
   // Auto-focus logic
   useEffect(() => {
     // Redirect if already logged in
@@ -183,7 +176,7 @@ const WorkerLogin = () => {
                 <button
                   type="submit"
                   disabled={isLoading || !phoneNumber || phoneNumber.length < 10}
-                  className="group relative w-full flex justify-center py-3.5 px-4 border border-transparent text-sm font-bold rounded-xl text-white transition-all duration-500 shadow-lg hover:shadow-xl hover:-translate-y-1 transform disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden"
+                  className="group relative w-full flex justify-center py-3.5 px-4 border border-transparent text-sm font-bold rounded-xl text-white transition-all duration-500 shadow-lg hover:shadow-xl hover:-translate-y-1 transform disabled:opacity-50 overflow-hidden"
                   style={{
                     backgroundColor: brandColor,
                     boxShadow: `0 10px 15px -3px ${brandColor}4D`
@@ -205,7 +198,12 @@ const WorkerLogin = () => {
             <div className="space-y-6">
               <button
                 type="button"
-                onClick={() => setStep('phone')}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setOtp(['', '', '', '', '', '']);
+                  setOtpToken('');
+                  setStep('phone');
+                }}
                 className="flex items-center text-sm text-gray-500 hover:text-[#347989] transition-colors mb-4 animate-stagger-1 animate-fade-in"
               >
                 <FiChevronLeft className="mr-1" /> Edit number

@@ -165,18 +165,24 @@ const UpdateProfile = () => {
 
       if (response.success) {
         toast.success('Profile updated successfully!');
-        // Update localStorage
-        const storedUserData = localStorage.getItem('userData');
-        if (storedUserData) {
-          const userData = JSON.parse(storedUserData);
-          const updated = { ...userData, name: formData.name, email: formData.email, profilePhoto: photoUrl };
-          localStorage.setItem('userData', JSON.stringify(updated));
+        // authService.updateProfile already updates localStorage with response.user
+        // but let's ensure we have the latest data
+        if (response.user) {
+          const storedUserData = localStorage.getItem('userData');
+          if (storedUserData) {
+            const existingData = JSON.parse(storedUserData);
+            const updatedData = { ...existingData, ...response.user };
+            localStorage.setItem('userData', JSON.stringify(updatedData));
+          } else {
+            localStorage.setItem('userData', JSON.stringify(response.user));
+          }
         }
         navigate('/user/account');
       } else {
         toast.error(response.message || 'Failed to update profile');
       }
     } catch (error) {
+      console.error('Profile update error:', error);
       toast.error(error.response?.data?.message || 'Failed to update profile. Please try again.');
     } finally {
       setIsSaving(false);

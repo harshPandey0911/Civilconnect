@@ -32,6 +32,7 @@ import RatingModal from '../../components/booking/RatingModal';
 import PaymentVerificationModal from '../../components/booking/PaymentVerificationModal';
 import { ConfirmDialog } from '../../../../components/common';
 import ReviewCard from '../../components/booking/ReviewCard';
+import NotificationBell from '../../components/common/NotificationBell';
 
 const toAssetUrl = (url) => {
   if (!url) return '';
@@ -422,13 +423,30 @@ const BookingDetails = () => {
 
   if (!booking) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-500">Booking not found</p>
+      <div className="min-h-screen flex items-center justify-center relative bg-white">
+        {/* Refined Brand Mesh Gradient Background */}
+        <div className="fixed inset-0 z-0 pointer-events-none">
+          <div className="absolute inset-0"
+            style={{
+              background: `
+                radial-gradient(at 0% 0%, ${themeColors?.brand?.teal || '#347989'}25 0%, transparent 70%),
+                radial-gradient(at 100% 0%, ${themeColors?.brand?.yellow || '#D68F35'}20 0%, transparent 70%),
+                radial-gradient(at 100% 100%, ${themeColors?.brand?.orange || '#BB5F36'}15 0%, transparent 75%),
+                radial-gradient(at 0% 100%, ${themeColors?.brand?.teal || '#347989'}10 0%, transparent 70%),
+                radial-gradient(at 50% 50%, ${themeColors?.brand?.teal || '#347989'}03 0%, transparent 100%),
+                #FFFFFF
+              `
+            }}
+          />
+        </div>
+        <div className="text-center relative z-10 px-6">
+          <div className="w-20 h-20 bg-white rounded-3xl shadow-xl flex items-center justify-center mx-auto mb-6">
+            <FiSearch className="w-10 h-10 text-gray-300" />
+          </div>
+          <p className="text-gray-500 font-bold">Booking not found</p>
           <button
             onClick={() => navigate('/user/my-bookings')}
-            className="mt-4 px-4 py-2 bg-brand text-white rounded-lg"
-            style={{ backgroundColor: themeColors.button }}
+            className="mt-6 px-8 py-3 bg-gray-900 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg active:scale-95 transition-all"
           >
             Go to My Bookings
           </button>
@@ -449,701 +467,732 @@ const BookingDetails = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50/50 pb-32">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b border-gray-100">
-        <div className="px-4 py-3">
+    <div className="min-h-screen pb-32 relative bg-white">
+      {/* Refined Brand Mesh Gradient Background */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <div className="absolute inset-0"
+          style={{
+            background: `
+              radial-gradient(at 0% 0%, ${themeColors?.brand?.teal || '#347989'}25 0%, transparent 70%),
+              radial-gradient(at 100% 0%, ${themeColors?.brand?.yellow || '#D68F35'}20 0%, transparent 70%),
+              radial-gradient(at 100% 100%, ${themeColors?.brand?.orange || '#BB5F36'}15 0%, transparent 75%),
+              radial-gradient(at 0% 100%, ${themeColors?.brand?.teal || '#347989'}10 0%, transparent 70%),
+              radial-gradient(at 50% 50%, ${themeColors?.brand?.teal || '#347989'}03 0%, transparent 100%),
+              #FFFFFF
+            `
+          }}
+        />
+        {/* Elegant Dot Grid Pattern */}
+        <div className="absolute inset-0 opacity-[0.04]"
+          style={{
+            backgroundImage: `radial-gradient(${themeColors?.brand?.teal || '#347989'} 0.8px, transparent 0.8px)`,
+            backgroundSize: '32px 32px'
+          }}
+        />
+      </div>
+
+      <div className="relative z-10">
+        {/* Modern Glassmorphism Header */}
+        <header className="sticky top-0 z-40 backdrop-blur-xl bg-white/40 border-b border-black/[0.03] px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate('/user/my-bookings')}
-              className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors active:scale-95"
+              className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm border border-black/[0.02]"
             >
               <FiArrowLeft className="w-5 h-5 text-gray-800" />
             </button>
             <div className="flex-1">
-              <h1 className="text-lg font-bold text-gray-900">Booking Details</h1>
-              <p className="text-xs text-gray-500 font-medium tracking-wide">
+              <h1 className="text-xl font-extrabold text-gray-900 tracking-tight">Booking Details</h1>
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">
                 ID: <span className="font-mono">{booking.bookingNumber || booking._id?.slice(-8).toUpperCase()}</span>
               </p>
             </div>
-            <div className={`px-3 py-1 rounded-full flex items-center gap-1.5 ${getStatusColor(booking.status)}`}>
+          </div>
+          <div className="flex items-center gap-2">
+            <NotificationBell />
+          </div>
+        </header>
+
+        <main className="max-w-xl mx-auto px-4 py-6 space-y-6">
+
+
+          {/* Visual Progress Stepper */}
+          {['cancelled', 'rejected'].includes(booking.status?.toLowerCase()) ? (
+            <div className="bg-red-50 rounded-2xl p-4 border border-red-100 flex items-center gap-3 text-red-700">
+              <FiXCircle className="w-5 h-5 shrink-0" />
+              <p className="font-medium text-sm">This booking has been {booking.status.toLowerCase()}.</p>
+            </div>
+          ) : (
+            <div className="bg-white rounded-3xl p-6 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100">
+              <div className="flex justify-between relative z-10">
+                {/* Step 1: Booked */}
+                <div className="flex flex-col items-center gap-2 w-1/4">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${['pending', 'confirmed', 'assigned', 'journey_started', 'visited', 'in_progress', 'work_done', 'completed'].includes(booking.status?.toLowerCase())
+                    ? 'bg-teal-600 text-white shadow-lg shadow-teal-200' : 'bg-gray-100 text-gray-400'
+                    }`}>
+                    <FiCheckCircle className="w-4 h-4" />
+                  </div>
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide text-center">Booked</p>
+                </div>
+
+                {/* Step 2: Assigned */}
+                <div className="flex flex-col items-center gap-2 w-1/4">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${['assigned', 'journey_started', 'visited', 'in_progress', 'work_done', 'completed'].includes(booking.status?.toLowerCase())
+                    ? 'bg-teal-600 text-white shadow-lg shadow-teal-200' : 'bg-gray-100 text-gray-400'
+                    }`}>
+                    2
+                  </div>
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide text-center">Assigned</p>
+                </div>
+
+                {/* Step 3: In Progress */}
+                <div className="flex flex-col items-center gap-2 w-1/4">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${['journey_started', 'visited', 'in_progress', 'work_done', 'completed'].includes(booking.status?.toLowerCase())
+                    ? 'bg-teal-600 text-white shadow-lg shadow-teal-200' : 'bg-gray-100 text-gray-400'
+                    }`}>
+                    3
+                  </div>
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide text-center">Started</p>
+                </div>
+
+                {/* Step 4: Done */}
+                <div className="flex flex-col items-center gap-2 w-1/4">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${['work_done', 'completed'].includes(booking.status?.toLowerCase())
+                    ? 'bg-teal-600 text-white shadow-lg shadow-teal-200' : 'bg-gray-100 text-gray-400'
+                    }`}>
+                    4
+                  </div>
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide text-center">Done</p>
+                </div>
+              </div>
+              {/* Connect lines */}
+              <div className="absolute top-[4.5rem] left-[15%] right-[15%] h-0.5 bg-gray-100 -z-0">
+                <div className="h-full bg-teal-500 transition-all duration-1000" style={{
+                  width:
+                    ['work_done', 'completed'].includes(booking.status?.toLowerCase()) ? '100%' :
+                      ['journey_started', 'visited', 'in_progress'].includes(booking.status?.toLowerCase()) ? '66%' :
+                        ['assigned'].includes(booking.status?.toLowerCase()) ? '33%' : '0%'
+                }}></div>
+              </div>
+            </div>
+          )}
+
+          {/* Status Badge */}
+          <div className="flex items-center justify-center">
+            <div className={`px-4 py-2 rounded-full flex items-center gap-2 shadow-sm border ${getStatusColor(booking.status)}`}>
               {getStatusIcon(booking.status)}
-              <span className="text-xs font-bold uppercase tracking-wide">{getStatusLabel(booking.status)}</span>
+              <span className="text-xs font-black uppercase tracking-wider">{getStatusLabel(booking.status)}</span>
             </div>
           </div>
-        </div>
-      </header>
 
-      <main className="max-w-xl mx-auto px-4 py-6 space-y-6">
+          {/* Service Partner Card */}
+          {(booking.workerId || booking.assignedTo || booking.vendorId) && ['confirmed', 'assigned', 'journey_started', 'visited', 'in_progress', 'work_done'].includes(booking.status?.toLowerCase()) && (
+            <div className="bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 transition-all hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)]">
+              <div className="flex justify-between items-start mb-4">
+                {['journey_started', 'visited', 'in_progress'].includes(booking.status?.toLowerCase()) ? (
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-3 w-3 relative">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                    </span>
+                    <p className="text-xs font-bold text-green-600 tracking-wider">LIVE TRACKING ACTIVE</p>
+                  </div>
+                ) : (
+                  <p className="text-xs font-bold text-gray-400 tracking-wider uppercase">Your Professional</p>
+                )}
 
-        {/* Visual Progress Stepper */}
-        {['cancelled', 'rejected'].includes(booking.status?.toLowerCase()) ? (
-          <div className="bg-red-50 rounded-2xl p-4 border border-red-100 flex items-center gap-3 text-red-700">
-            <FiXCircle className="w-5 h-5 shrink-0" />
-            <p className="font-medium text-sm">This booking has been {booking.status.toLowerCase()}.</p>
-          </div>
-        ) : (
-          <div className="bg-white rounded-3xl p-6 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100">
-            <div className="flex justify-between relative z-10">
-              {/* Step 1: Booked */}
-              <div className="flex flex-col items-center gap-2 w-1/4">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${['pending', 'confirmed', 'assigned', 'journey_started', 'visited', 'in_progress', 'work_done', 'completed'].includes(booking.status?.toLowerCase())
-                  ? 'bg-teal-600 text-white shadow-lg shadow-teal-200' : 'bg-gray-100 text-gray-400'
-                  }`}>
-                  <FiCheckCircle className="w-4 h-4" />
-                </div>
-                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide text-center">Booked</p>
+                <button
+                  onClick={() => navigate(`/user/booking/${booking._id || booking.id}/track`)}
+                  className="text-xs font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
+                >
+                  Map View <FiChevronRight />
+                </button>
               </div>
 
-              {/* Step 2: Assigned */}
-              <div className="flex flex-col items-center gap-2 w-1/4">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${['assigned', 'journey_started', 'visited', 'in_progress', 'work_done', 'completed'].includes(booking.status?.toLowerCase())
-                  ? 'bg-teal-600 text-white shadow-lg shadow-teal-200' : 'bg-gray-100 text-gray-400'
-                  }`}>
-                  2
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-full p-1 bg-gradient-to-tr from-gray-100 to-gray-50 shrink-0">
+                  <div className="w-full h-full rounded-full overflow-hidden relative bg-white">
+                    {(booking.workerId?.profileImage || booking.workerId?.profilePhoto || booking.assignedTo?.profileImage || booking.assignedTo?.profilePhoto || booking.vendorId?.profileImage || booking.vendorId?.profilePhoto) ? (
+                      <>
+                        <img
+                          src={toAssetUrl(booking.workerId?.profileImage || booking.workerId?.profilePhoto || booking.assignedTo?.profileImage || booking.assignedTo?.profilePhoto || booking.vendorId?.profileImage || booking.vendorId?.profilePhoto)}
+                          alt="Professional"
+                          className="w-full h-full object-cover"
+                          onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.querySelector('.fallback-icon').style.display = 'block'; }}
+                        />
+                        <FiUser className="w-8 h-8 text-gray-300 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 fallback-icon hidden" />
+                      </>
+                    ) : (
+                      <FiUser className="w-8 h-8 text-gray-300 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                    )}
+                  </div>
                 </div>
-                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide text-center">Assigned</p>
-              </div>
 
-              {/* Step 3: In Progress */}
-              <div className="flex flex-col items-center gap-2 w-1/4">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${['journey_started', 'visited', 'in_progress', 'work_done', 'completed'].includes(booking.status?.toLowerCase())
-                  ? 'bg-teal-600 text-white shadow-lg shadow-teal-200' : 'bg-gray-100 text-gray-400'
-                  }`}>
-                  3
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-gray-900 text-lg truncate">
+                    {booking.workerId?.name || booking.assignedTo?.name || booking.vendorId?.name || 'Service Partner'}
+                  </h3>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <div className="flex items-center gap-1 bg-yellow-50 px-2 py-0.5 rounded-md border border-yellow-100">
+                      <FiStar className="w-3 h-3 text-yellow-500 fill-current" />
+                      <span className="text-xs font-bold text-yellow-700">4.8</span>
+                    </div>
+                    <span className="text-xs text-gray-400 font-medium">• Verified</span>
+                  </div>
                 </div>
-                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide text-center">Started</p>
-              </div>
 
-              {/* Step 4: Done */}
-              <div className="flex flex-col items-center gap-2 w-1/4">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${['work_done', 'completed'].includes(booking.status?.toLowerCase())
-                  ? 'bg-teal-600 text-white shadow-lg shadow-teal-200' : 'bg-gray-100 text-gray-400'
-                  }`}>
-                  4
-                </div>
-                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide text-center">Done</p>
+                {/* Quick Call Action */}
+                {(booking.workerId?.phone || booking.assignedTo?.phone || booking.vendorId?.phone) && (
+                  <a
+                    href={`tel:${booking.workerId?.phone || booking.assignedTo?.phone || booking.vendorId?.phone}`}
+                    className="w-10 h-10 bg-green-50 text-green-600 rounded-full flex items-center justify-center hover:bg-green-100 transition-colors active:scale-95 border border-green-100"
+                  >
+                    <FiPhone className="w-5 h-5" />
+                  </a>
+                )}
               </div>
             </div>
-            {/* Connect lines */}
-            <div className="absolute top-[4.5rem] left-[15%] right-[15%] h-0.5 bg-gray-100 -z-0">
-              <div className="h-full bg-teal-500 transition-all duration-1000" style={{
-                width:
-                  ['work_done', 'completed'].includes(booking.status?.toLowerCase()) ? '100%' :
-                    ['journey_started', 'visited', 'in_progress'].includes(booking.status?.toLowerCase()) ? '66%' :
-                      ['assigned'].includes(booking.status?.toLowerCase()) ? '33%' : '0%'
-              }}></div>
-            </div>
-          </div>
-        )}
+          )}
 
-        {/* Service Partner Card */}
-        {(booking.workerId || booking.assignedTo || booking.vendorId) && ['confirmed', 'assigned', 'journey_started', 'visited', 'in_progress', 'work_done'].includes(booking.status?.toLowerCase()) && (
-          <div className="bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 transition-all hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)]">
-            <div className="flex justify-between items-start mb-4">
-              {['journey_started', 'visited', 'in_progress'].includes(booking.status?.toLowerCase()) ? (
-                <div className="flex items-center gap-2">
-                  <span className="flex h-3 w-3 relative">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-                  </span>
-                  <p className="text-xs font-bold text-green-600 tracking-wider">LIVE TRACKING ACTIVE</p>
+          {/* Arrival OTP Card - Show during early stages until verified */}
+          {(booking.arrivalOTP || booking.visitOtp) && ['confirmed', 'assigned', 'journey_started'].includes(booking.status?.toLowerCase()) && (
+            <div className="relative overflow-hidden rounded-3xl shadow-lg border border-blue-100 mb-6 active:scale-[0.99] transition-all">
+              {/* Animated gradient background */}
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 opacity-95"></div>
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.15)_0%,transparent_50%)]"></div>
+
+              <div className="relative z-10 p-6 flex flex-col items-center">
+                <div className="flex items-center gap-3 w-full mb-4">
+                  <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30">
+                    <FiMapPin className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-white tracking-tight">Verification OTP</h3>
+                    <p className="text-xs text-blue-100 font-medium">Share when professional reaches</p>
+                  </div>
                 </div>
-              ) : (
-                <p className="text-xs font-bold text-gray-400 tracking-wider uppercase">Your Professional</p>
-              )}
 
-              <button
-                onClick={() => navigate(`/user/booking/${booking._id || booking.id}/track`)}
-                className="text-xs font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
-              >
-                Map View <FiChevronRight />
-              </button>
+                {/* OTP Display */}
+                <div className="flex justify-center gap-3 mb-5">
+                  {String(booking.arrivalOTP || booking.visitOtp).split('').map((digit, idx) => (
+                    <div
+                      key={idx}
+                      className="w-14 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center border-2 border-white/40 shadow-xl"
+                    >
+                      <span className="text-3xl font-black text-white drop-shadow-md">{digit}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="w-full bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/20">
+                  <div className="flex items-center justify-center gap-2 text-white text-sm">
+                    <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(74,222,128,0.5)]"></span>
+                    <p className="font-medium">Waiting for professional to reach your location</p>
+                  </div>
+                </div>
+              </div>
             </div>
+          )}
 
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full p-1 bg-gradient-to-tr from-gray-100 to-gray-50 shrink-0">
-                <div className="w-full h-full rounded-full overflow-hidden relative bg-white">
-                  {(booking.workerId?.profileImage || booking.workerId?.profilePhoto || booking.assignedTo?.profileImage || booking.assignedTo?.profilePhoto || booking.vendorId?.profileImage || booking.vendorId?.profilePhoto) ? (
-                    <>
-                      <img
-                        src={toAssetUrl(booking.workerId?.profileImage || booking.workerId?.profilePhoto || booking.assignedTo?.profileImage || booking.assignedTo?.profilePhoto || booking.vendorId?.profileImage || booking.vendorId?.profilePhoto)}
-                        alt="Professional"
-                        className="w-full h-full object-cover"
-                        onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.querySelector('.fallback-icon').style.display = 'block'; }}
-                      />
-                      <FiUser className="w-8 h-8 text-gray-300 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 fallback-icon hidden" />
-                    </>
-                  ) : (
-                    <FiUser className="w-8 h-8 text-gray-300 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+          {/* Professional Arrived Notification - Only after OTP verified */}
+          {booking?.status?.toLowerCase() === 'visited' && (
+            <div className="relative overflow-hidden rounded-3xl shadow-lg mb-6 active:scale-[0.98] transition-all">
+              <div className="absolute inset-0 bg-gradient-to-br from-teal-500 via-teal-600 to-emerald-700 opacity-95"></div>
+              <div className="relative z-10 p-6 flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30 shrink-0">
+                  <FiCheckCircle className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white tracking-tight">Professional Arrived</h3>
+                  <p className="text-sm text-teal-50 font-medium">Expert is at your location and starting the work.</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Waiting for Vendor to initiate Payment */}
+          {!booking.customerConfirmationOTP && ['work_done'].includes(booking.status?.toLowerCase()) && !booking.cashCollected && (
+            <div className="bg-white rounded-3xl p-6 shadow-lg border border-teal-100 mb-6 flex items-center gap-4 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-teal-50 rounded-full -translate-y-12 translate-x-12 blur-2xl"></div>
+              <div className="w-12 h-12 rounded-2xl bg-teal-50 flex items-center justify-center shrink-0 border border-teal-100">
+                <FiLoader className="w-6 h-6 text-teal-600 animate-spin" />
+              </div>
+              <div className="relative z-10">
+                <h3 className="font-bold text-gray-900">Finalizing Bill</h3>
+                <p className="text-sm text-gray-500">Professional is finalizing payment details. Please wait a moment...</p>
+              </div>
+            </div>
+          )}
+
+          {/* Plan Covered Card - Show for plan_benefit bookings (before OTP is sent) */}
+          {(booking.paymentStatus === 'plan_covered' || (booking.paymentMethod === 'plan_benefit' && booking.paymentStatus !== 'success')) &&
+            ['visited', 'in_progress', 'work_done', 'completed'].includes(booking.status?.toLowerCase()) &&
+            !booking.customerConfirmationOTP && (
+              <div className="relative overflow-hidden rounded-3xl shadow-lg border border-emerald-100 mb-6">
+                <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 via-teal-600 to-green-700 opacity-95"></div>
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,rgba(255,255,255,0.15)_0%,transparent_50%)]"></div>
+
+                <div className="relative z-10 p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30">
+                      <FiCheckCircle className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-white tracking-tight">
+                        {booking.status?.toLowerCase() === 'work_done' ? 'Finalizing Bill' : 'Plan Benefit Active'}
+                      </h3>
+                      <p className="text-xs font-medium text-emerald-100">
+                        {booking.status?.toLowerCase() === 'work_done' ? 'Vendor preparing final bill' : 'Base service covered by your plan'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-white/15 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
+                    <div className="flex items-center gap-3 mb-2">
+                      <FiCheckCircle className="w-5 h-5 text-emerald-200" />
+                      <span className="font-bold text-white">Base Service Covered</span>
+                    </div>
+                    <p className="text-sm text-emerald-100 leading-relaxed">
+                      Your base service fee is covered by your membership plan. {booking.status?.toLowerCase() === 'work_done' ? 'The vendor is preparing the final bill for any additional charges.' : 'You may only need to pay for extra parts or services.'}
+                    </p>
+                  </div>
+
+                  {booking.status?.toLowerCase() === 'work_done' && (
+                    <div className="mt-4 flex items-center justify-center gap-2 text-white/80">
+                      <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                      <span className="text-xs font-medium">Waiting for vendor to finalize...</span>
+                    </div>
                   )}
                 </div>
               </div>
+            )}
 
-              <div className="flex-1 min-w-0">
-                <h3 className="font-bold text-gray-900 text-lg truncate">
-                  {booking.workerId?.name || booking.assignedTo?.name || booking.vendorId?.name || 'Service Partner'}
-                </h3>
-                <div className="flex items-center gap-1.5 mt-1">
-                  <div className="flex items-center gap-1 bg-yellow-50 px-2 py-0.5 rounded-md border border-yellow-100">
-                    <FiStar className="w-3 h-3 text-yellow-500 fill-current" />
-                    <span className="text-xs font-bold text-yellow-700">4.8</span>
-                  </div>
-                  <span className="text-xs text-gray-400 font-medium">• Verified</span>
-                </div>
-              </div>
-
-              {/* Quick Call Action */}
-              {(booking.workerId?.phone || booking.assignedTo?.phone || booking.vendorId?.phone) && (
-                <a
-                  href={`tel:${booking.workerId?.phone || booking.assignedTo?.phone || booking.vendorId?.phone}`}
-                  className="w-10 h-10 bg-green-50 text-green-600 rounded-full flex items-center justify-center hover:bg-green-100 transition-colors active:scale-95 border border-green-100"
-                >
-                  <FiPhone className="w-5 h-5" />
-                </a>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Arrival OTP Card - Show during early stages until verified */}
-        {(booking.arrivalOTP || booking.visitOtp) && ['confirmed', 'assigned', 'journey_started'].includes(booking.status?.toLowerCase()) && (
-          <div className="relative overflow-hidden rounded-3xl shadow-lg border border-blue-100 mb-6 active:scale-[0.99] transition-all">
-            {/* Animated gradient background */}
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 opacity-95"></div>
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.15)_0%,transparent_50%)]"></div>
-
-            <div className="relative z-10 p-6 flex flex-col items-center">
-              <div className="flex items-center gap-3 w-full mb-4">
-                <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30">
-                  <FiMapPin className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-white tracking-tight">Verification OTP</h3>
-                  <p className="text-xs text-blue-100 font-medium">Share when professional reaches</p>
-                </div>
-              </div>
-
-              {/* OTP Display */}
-              <div className="flex justify-center gap-3 mb-5">
-                {String(booking.arrivalOTP || booking.visitOtp).split('').map((digit, idx) => (
-                  <div
-                    key={idx}
-                    className="w-14 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center border-2 border-white/40 shadow-xl"
-                  >
-                    <span className="text-3xl font-black text-white drop-shadow-md">{digit}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="w-full bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/20">
-                <div className="flex items-center justify-center gap-2 text-white text-sm">
-                  <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(74,222,128,0.5)]"></span>
-                  <p className="font-medium">Waiting for professional to reach your location</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Professional Arrived Notification - Only after OTP verified */}
-        {booking?.status?.toLowerCase() === 'visited' && (
-          <div className="relative overflow-hidden rounded-3xl shadow-lg mb-6 active:scale-[0.98] transition-all">
-            <div className="absolute inset-0 bg-gradient-to-br from-teal-500 via-teal-600 to-emerald-700 opacity-95"></div>
-            <div className="relative z-10 p-6 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30 shrink-0">
-                <FiCheckCircle className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-white tracking-tight">Professional Arrived</h3>
-                <p className="text-sm text-teal-50 font-medium">Expert is at your location and starting the work.</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Waiting for Vendor to initiate Payment */}
-        {!booking.customerConfirmationOTP && ['work_done'].includes(booking.status?.toLowerCase()) && !booking.cashCollected && (
-          <div className="bg-white rounded-3xl p-6 shadow-lg border border-teal-100 mb-6 flex items-center gap-4 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-teal-50 rounded-full -translate-y-12 translate-x-12 blur-2xl"></div>
-            <div className="w-12 h-12 rounded-2xl bg-teal-50 flex items-center justify-center shrink-0 border border-teal-100">
-              <FiLoader className="w-6 h-6 text-teal-600 animate-spin" />
-            </div>
-            <div className="relative z-10">
-              <h3 className="font-bold text-gray-900">Finalizing Bill</h3>
-              <p className="text-sm text-gray-500">Professional is finalizing payment details. Please wait a moment...</p>
-            </div>
-          </div>
-        )}
-
-        {/* Plan Covered Card - Show for plan_benefit bookings (before OTP is sent) */}
-        {(booking.paymentStatus === 'plan_covered' || (booking.paymentMethod === 'plan_benefit' && booking.paymentStatus !== 'success')) &&
-          ['visited', 'in_progress', 'work_done', 'completed'].includes(booking.status?.toLowerCase()) &&
-          !booking.customerConfirmationOTP && (
-            <div className="relative overflow-hidden rounded-3xl shadow-lg border border-emerald-100 mb-6">
-              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 via-teal-600 to-green-700 opacity-95"></div>
+          {/* Payment Card - Show when work is done AND bill is finalized (OTP exists) or paid */}
+          {(booking.customerConfirmationOTP || booking.paymentStatus === 'success') && ['work_done'].includes(booking.status?.toLowerCase()) && !booking.cashCollected && (
+            <div
+              onClick={() => setShowPaymentModal(true)}
+              className={`relative overflow-hidden rounded-3xl shadow-lg border cursor-pointer active:scale-[0.98] transition-all ${booking.paymentStatus === 'success' ? 'border-green-100' : 'border-orange-100'
+                }`}>
+              {/* Animated gradient background */}
+              <div className={`absolute inset-0 opacity-95 ${booking.paymentStatus === 'success'
+                ? 'bg-gradient-to-br from-green-500 via-green-600 to-emerald-700'
+                : 'bg-gradient-to-br from-orange-500 via-orange-600 to-red-600'
+                }`}></div>
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,rgba(255,255,255,0.15)_0%,transparent_50%)]"></div>
 
               <div className="relative z-10 p-6">
-                <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center gap-3 mb-6">
                   <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30">
-                    <FiCheckCircle className="w-6 h-6 text-white" />
+                    {booking.paymentStatus === 'success' ? (
+                      <FiCheckCircle className="w-6 h-6 text-white" />
+                    ) : (
+                      <FiDollarSign className="w-6 h-6 text-white" />
+                    )}
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-white tracking-tight">
-                      {booking.status?.toLowerCase() === 'work_done' ? 'Finalizing Bill' : 'Plan Benefit Active'}
+                      {booking.paymentStatus === 'success' ? 'Payment Received' : 'Final Payment'}
                     </h3>
-                    <p className="text-xs font-medium text-emerald-100">
-                      {booking.status?.toLowerCase() === 'work_done' ? 'Vendor preparing final bill' : 'Base service covered by your plan'}
+                    <p className={`text-xs font-medium ${booking.paymentStatus === 'success' ? 'text-green-50' : 'text-orange-100'}`}>
+                      {booking.paymentStatus === 'success' ? 'Transaction verified successfully' : 'Final amount after service completion'}
                     </p>
                   </div>
                 </div>
 
-                <div className="bg-white/15 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
-                  <div className="flex items-center gap-3 mb-2">
-                    <FiCheckCircle className="w-5 h-5 text-emerald-200" />
-                    <span className="font-bold text-white">Base Service Covered</span>
-                  </div>
-                  <p className="text-sm text-emerald-100 leading-relaxed">
-                    Your base service fee is covered by your membership plan. {booking.status?.toLowerCase() === 'work_done' ? 'The vendor is preparing the final bill for any additional charges.' : 'You may only need to pay for extra parts or services.'}
-                  </p>
-                </div>
+                {/* Action Button for Online Payment - Only show if not paid */}
+                {booking.paymentStatus !== 'success' && (
+                  <>
+                    <button
+                      onClick={handleOnlinePayment}
+                      className="w-full py-4 mb-4 bg-white text-orange-600 rounded-2xl font-black text-sm shadow-xl hover:bg-orange-50 active:scale-95 transition-all flex items-center justify-center gap-2 group"
+                    >
+                      <FiDollarSign className="w-4 h-4 group-hover:rotate-12 transition-transform" />
+                      Pay Online Now
+                      <FiChevronRight className="w-4 h-4" />
+                    </button>
 
-                {booking.status?.toLowerCase() === 'work_done' && (
-                  <div className="mt-4 flex items-center justify-center gap-2 text-white/80">
-                    <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                    <span className="text-xs font-medium">Waiting for vendor to finalize...</span>
-                  </div>
+                    <div className="flex flex-col items-center mb-6">
+                      <p className="text-[10px] font-bold text-orange-100 uppercase tracking-[0.2em] mb-3 opacity-90">Verification Code</p>
+                      <div className="flex justify-center gap-2">
+                        {String(booking.customerConfirmationOTP || booking.paymentOtp || '0000').split('').map((digit, idx) => (
+                          <div
+                            key={idx}
+                            className="w-12 h-14 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/30 shadow-lg"
+                          >
+                            <span className="text-2xl font-black text-white">{digit}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <p className="text-[10px] text-orange-50 mt-3 font-medium bg-black/10 px-3 py-1 rounded-full backdrop-blur-sm">
+                        Share this code with the professional ONLY after your satisfaction
+                      </p>
+                    </div>
+                  </>
                 )}
+
+                <div className={`backdrop-blur-sm rounded-xl p-4 border ${booking.paymentStatus === 'success' ? 'bg-white/10 border-white/10' : 'bg-white/15 border-white/20'
+                  }`}>
+                  <div className="flex items-center gap-3 text-white">
+                    {booking.paymentStatus === 'success' ? (
+                      <FiCheckCircle className="w-5 h-5 text-green-200" />
+                    ) : (
+                      <FiClock className="w-5 h-5 text-orange-200" />
+                    )}
+                    <div className="text-sm">
+                      {booking.paymentStatus === 'success'
+                        ? (
+                          booking.paymentMethod === 'plan_benefit'
+                            ? <p className="font-medium">Covered by your Membership Plan</p>
+                            : <p className="font-medium">Booking completed successfully. Thank you for choosing us!</p>
+                        )
+                        : <p className="font-medium">Total Amount: <span className="text-lg font-black ml-1">₹{(booking.finalAmount || booking.totalAmount || 0).toLocaleString('en-IN')}</span></p>
+                      }
+                      {booking.paymentStatus !== 'success' && <p className="text-[10px] text-orange-100 mt-0.5 opacity-80">Pay online above or prepare cash for the professional.</p>}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}
 
-        {/* Payment Card - Show when work is done AND bill is finalized (OTP exists) or paid */}
-        {(booking.customerConfirmationOTP || booking.paymentStatus === 'success') && ['work_done'].includes(booking.status?.toLowerCase()) && !booking.cashCollected && (
-          <div
-            onClick={() => setShowPaymentModal(true)}
-            className={`relative overflow-hidden rounded-3xl shadow-lg border cursor-pointer active:scale-[0.98] transition-all ${booking.paymentStatus === 'success' ? 'border-green-100' : 'border-orange-100'
-              }`}>
-            {/* Animated gradient background */}
-            <div className={`absolute inset-0 opacity-95 ${booking.paymentStatus === 'success'
-              ? 'bg-gradient-to-br from-green-500 via-green-600 to-emerald-700'
-              : 'bg-gradient-to-br from-orange-500 via-orange-600 to-red-600'
-              }`}></div>
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,rgba(255,255,255,0.15)_0%,transparent_50%)]"></div>
+          {/* Location & Time Section */}
+          <section className="space-y-4">
+            {/* Map Preview - Improved overlay for better usability */}
+            {booking.address && (
+              <>
+                <div className="group relative rounded-3xl overflow-hidden shadow-sm border border-gray-200 bg-gray-100 h-48">
+                  {(() => {
+                    let mapQuery = '';
+                    if (typeof booking.address === 'object' && booking.address.lat && booking.address.lng) {
+                      mapQuery = `${booking.address.lat},${booking.address.lng}`;
+                    } else {
+                      const addrStr = typeof booking.address === 'string'
+                        ? booking.address
+                        : `${booking.address?.addressLine1 || ''}, ${booking.address?.city || ''}`;
+                      mapQuery = encodeURIComponent(addrStr);
+                    }
+                    return (
+                      <iframe
+                        className="w-full h-full opacity-80 group-hover:opacity-100 transition-opacity"
+                        frameBorder="0"
+                        style={{ border: 0, pointerEvents: 'none' }}
+                        src={`https://maps.google.com/maps?q=${mapQuery}&z=15&output=embed`}
+                        allowFullScreen
+                        tabIndex="-1"
+                        title="Location"
+                      />
+                    )
+                  })()}
 
-            <div className="relative z-10 p-6">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30">
-                  {booking.paymentStatus === 'success' ? (
-                    <FiCheckCircle className="w-6 h-6 text-white" />
-                  ) : (
-                    <FiDollarSign className="w-6 h-6 text-white" />
-                  )}
+                  {/* Floating Info */}
+                  <div className="absolute top-4 left-4 right-4 flex justify-between pointer-events-none">
+                    <div className="bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-xl shadow-sm border border-white/50 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]"></span>
+                      <span className="text-xs font-bold text-gray-700">Destination</span>
+                    </div>
+                  </div>
+
+                  {/* Track Button Overlay - Always visible but distinct */}
+                  <div className="absolute inset-0 flex items-center justify-center bg-transparent pointer-events-none">
+                    <div className="pointer-events-auto bg-white text-gray-900 px-5 py-2.5 rounded-full text-sm font-bold flex items-center gap-2 shadow-lg hover:scale-105 active:scale-95 transition-all border border-gray-100" onClick={() => navigate(`/user/booking/${booking._id || booking.id}/track`)}>
+                      <FiMapPin className="w-4 h-4 text-red-500" /> View on Map
+                    </div>
+                  </div>
+                </div>
+
+                {/* Dedicated Track Button */}
+                {['confirmed', 'assigned', 'journey_started', 'visited', 'in_progress'].includes(booking.status?.toLowerCase()) && (
+                  <button
+                    onClick={() => navigate(`/user/booking/${booking._id || booking.id}/track`)}
+                    className="w-full py-4 bg-gradient-to-r from-gray-900 to-gray-800 text-white rounded-2xl font-bold shadow-lg shadow-gray-200 active:scale-95 transition-all flex items-center justify-center gap-3 hover:shadow-xl"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                      <FiMapPin className="w-4 h-4 text-white" />
+                    </div>
+                    Track Service Agent
+                  </button>
+                )}
+              </>
+            )}
+
+            <div className="bg-white rounded-3xl p-5 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100">
+              <div className="flex items-start gap-4 mb-4">
+                <div className="w-10 h-10 rounded-2xl bg-teal-50 flex items-center justify-center shrink-0">
+                  <FiMapPin className="w-5 h-5 text-teal-600" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs text-gray-400 font-bold uppercase tracking-wide mb-1">Service Address</p>
+                  <p className="text-sm font-medium text-gray-900 leading-relaxed">{getAddressString(booking.address)}</p>
+                </div>
+              </div>
+              <div className="w-full h-px bg-gray-50 mb-4"></div>
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-2xl bg-indigo-50 flex items-center justify-center shrink-0">
+                  <FiCalendar className="w-5 h-5 text-indigo-600" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs text-gray-400 font-bold uppercase tracking-wide mb-1">Schedule</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {formatDate(booking.scheduledDate)}
+                  </p>
+                  <p className="text-sm text-gray-500">{booking.scheduledTime || booking.timeSlot?.start || 'N/A'}</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Service Details */}
+          <section className="bg-white rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100 overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-50 bg-gray-50/50 flex justify-between items-center">
+              <h3 className="font-bold text-gray-900">Order Summary</h3>
+              <span className="text-xs font-semibold px-2 py-1 bg-white border border-gray-200 rounded text-gray-500">
+                {booking.serviceCategory || 'Service'}
+              </span>
+            </div>
+
+            <div className="p-5">
+              <div className="flex gap-4">
+                <div className="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center shrink-0">
+                  <FiPackage className="w-8 h-8 text-gray-400" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-white tracking-tight">
-                    {booking.paymentStatus === 'success' ? 'Payment Received' : 'Final Payment'}
-                  </h3>
-                  <p className={`text-xs font-medium ${booking.paymentStatus === 'success' ? 'text-green-50' : 'text-orange-100'}`}>
-                    {booking.paymentStatus === 'success' ? 'Transaction verified successfully' : 'Final amount after service completion'}
-                  </p>
+                  <h4 className="font-bold text-gray-900">{booking.serviceName || 'Service'}</h4>
+                  {booking.description && <p className="text-xs text-gray-500 mt-1 line-clamp-2">{booking.description}</p>}
                 </div>
               </div>
 
-              {/* Action Button for Online Payment - Only show if not paid */}
-              {booking.paymentStatus !== 'success' && (
-                <>
-                  <button
-                    onClick={handleOnlinePayment}
-                    className="w-full py-4 mb-4 bg-white text-orange-600 rounded-2xl font-black text-sm shadow-xl hover:bg-orange-50 active:scale-95 transition-all flex items-center justify-center gap-2 group"
-                  >
-                    <FiDollarSign className="w-4 h-4 group-hover:rotate-12 transition-transform" />
-                    Pay Online Now
-                    <FiChevronRight className="w-4 h-4" />
-                  </button>
+              {/* Items List */}
+              {booking.bookedItems && booking.bookedItems.length > 0 ? (
+                <div className="mt-5 space-y-3">
+                  {booking.bookedItems.map((item, idx) => (
+                    <div key={idx} className="flex justify-between items-start pt-3 border-t border-dashed border-gray-100">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-gray-400">x{item.quantity}</span>
+                          <span className="text-sm font-medium text-gray-800">{item.card?.title || item.title}</span>
+                        </div>
+                        {(item.card?.subtitle) && <p className="text-xs text-gray-400 ml-6">{item.card.subtitle}</p>}
+                      </div>
+                      <span className="text-sm font-semibold text-gray-900">₹{(item.card?.price || 0).toLocaleString('en-IN')}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : booking.userNotes ? (
+                <div className="mt-4 p-3 bg-gray-50 rounded-xl">
+                  <p className="text-xs font-bold text-gray-500 mb-1">Notes</p>
+                  <p className="text-sm text-gray-800">{booking.userNotes.replace('Items: ', '')}</p>
+                </div>
+              ) : null}
+            </div>
+          </section>
 
-                  <div className="flex flex-col items-center mb-6">
-                    <p className="text-[10px] font-bold text-orange-100 uppercase tracking-[0.2em] mb-3 opacity-90">Verification Code</p>
-                    <div className="flex justify-center gap-2">
-                      {String(booking.customerConfirmationOTP || booking.paymentOtp || '0000').split('').map((digit, idx) => (
-                        <div
-                          key={idx}
-                          className="w-12 h-14 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/30 shadow-lg"
-                        >
-                          <span className="text-2xl font-black text-white">{digit}</span>
+          {/* Payment Summary - Professional Card */}
+          <section className="bg-white rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100 overflow-hidden">
+            <div className="p-5">
+              <div className="flex items-center gap-2 mb-4 pb-2 border-b border-gray-100">
+                <div className={`p-2 rounded-lg ${booking.paymentMethod === 'plan_benefit' ? 'bg-amber-100' : 'bg-green-50'}`}>
+                  {booking.paymentMethod === 'plan_benefit' ? (
+                    <FiAward className="w-5 h-5 text-amber-600" />
+                  ) : (
+                    <FiDollarSign className="w-5 h-5 text-green-600" />
+                  )}
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-gray-900">
+                    {booking.paymentMethod === 'plan_benefit' ? 'Membership Benefit' : 'Payment Summary'}
+                  </h3>
+                </div>
+              </div>
+
+              <div className="space-y-3 text-sm">
+                {/* Base Items */}
+                <div className="flex justify-between items-center text-gray-600">
+                  <span>Base Price</span>
+                  {booking.paymentMethod === 'plan_benefit' ? (
+                    <div className="flex items-center gap-2">
+                      <span className="line-through text-gray-400 text-xs">₹{(booking.basePrice || 0).toLocaleString('en-IN')}</span>
+                      <span className="text-emerald-600 font-bold text-xs bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">FREE ✓</span>
+                    </div>
+                  ) : (
+                    <span className="font-medium text-gray-900">₹{(booking.basePrice || 0).toLocaleString('en-IN')}</span>
+                  )}
+                </div>
+
+                {(booking.tax > 0 || booking.paymentMethod === 'plan_benefit') && (
+                  <div className="flex justify-between items-center text-gray-600">
+                    <span>GST (18%)</span>
+                    {booking.paymentMethod === 'plan_benefit' ? (
+                      <div className="flex items-center gap-2">
+                        <span className="line-through text-gray-400 text-xs">₹{(booking.tax || 0).toLocaleString('en-IN')}</span>
+                        <span className="text-emerald-600 font-bold text-xs bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">FREE ✓</span>
+                      </div>
+                    ) : (
+                      <span className="font-medium text-gray-900">₹{(booking.tax || 0).toLocaleString('en-IN')}</span>
+                    )}
+                  </div>
+                )}
+
+                {(booking.visitingCharges > 0 || booking.visitationFee > 0 || booking.paymentMethod === 'plan_benefit') && (
+                  <div className="flex justify-between items-center text-gray-600">
+                    <span>Convenience Fee</span>
+                    {booking.paymentMethod === 'plan_benefit' ? (
+                      <div className="flex items-center gap-2">
+                        <span className="line-through text-gray-400 text-xs">₹{(booking.visitingCharges || booking.visitationFee || 0).toLocaleString('en-IN')}</span>
+                        <span className="text-emerald-600 font-bold text-xs bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">FREE ✓</span>
+                      </div>
+                    ) : (
+                      <span className="font-medium text-gray-900">₹{(booking.visitingCharges || booking.visitationFee || 0).toLocaleString('en-IN')}</span>
+                    )}
+                  </div>
+                )}
+
+                {booking.paymentMethod !== 'plan_benefit' && booking.discount > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-green-600">Discount</span>
+                    <span className="font-medium text-green-600">-₹{booking.discount.toLocaleString('en-IN')}</span>
+                  </div>
+                )}
+
+                {/* Extra Charges Section */}
+                {booking.extraCharges && booking.extraCharges.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-dashed border-gray-200">
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Extra Charges</p>
+                    <div className="bg-gray-50 rounded-lg p-3 space-y-2 border border-gray-100">
+                      {booking.extraCharges.map((item, idx) => (
+                        <div key={idx} className="flex justify-between text-gray-700 text-sm">
+                          <span className="flex items-center gap-2">
+                            <span className="text-xs font-bold bg-white border px-1.5 rounded text-gray-500">x{item.quantity || 1}</span>
+                            <span>{item.name}</span>
+                          </span>
+                          <span className="font-medium">+₹{(item.total || item.price || 0).toLocaleString('en-IN')}</span>
                         </div>
                       ))}
+                      <div className="flex justify-between font-bold text-blue-600 pt-2 mt-2 border-t border-gray-200">
+                        <span>Total Extras</span>
+                        <span>+₹{(booking.extraChargesTotal || 0).toLocaleString('en-IN')}</span>
+                      </div>
                     </div>
-                    <p className="text-[10px] text-orange-50 mt-3 font-medium bg-black/10 px-3 py-1 rounded-full backdrop-blur-sm">
-                      Share this code with the professional ONLY after your satisfaction
-                    </p>
                   </div>
-                </>
-              )}
+                )}
 
-              <div className={`backdrop-blur-sm rounded-xl p-4 border ${booking.paymentStatus === 'success' ? 'bg-white/10 border-white/10' : 'bg-white/15 border-white/20'
+                <div className="pt-4 mt-2 border-t border-gray-100 flex justify-between items-center">
+                  <span className="font-bold text-gray-900 text-lg">Total Payable</span>
+                  <span className="font-black text-gray-900 text-xl">
+                    ₹{(booking.paymentMethod === 'plan_benefit'
+                      ? (booking.userPayableAmount || booking.extraChargesTotal || 0)
+                      : (booking.finalAmount || booking.totalAmount || 0)
+                    ).toLocaleString('en-IN')}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Payment Status Footer */}
+            <div className="bg-gray-50 px-5 py-3 border-t border-gray-100 flex justify-between items-center">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">Payment Status</span>
+              <span className={`px-2.5 py-1 rounded-md text-xs font-bold capitalize ${booking.paymentStatus === 'success' ? 'bg-green-100 text-green-700' :
+                booking.paymentStatus === 'pending' || booking.paymentStatus === 'plan_covered' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
                 }`}>
-                <div className="flex items-center gap-3 text-white">
-                  {booking.paymentStatus === 'success' ? (
-                    <FiCheckCircle className="w-5 h-5 text-green-200" />
-                  ) : (
-                    <FiClock className="w-5 h-5 text-orange-200" />
-                  )}
-                  <div className="text-sm">
-                    {booking.paymentStatus === 'success'
-                      ? (
-                        booking.paymentMethod === 'plan_benefit'
-                          ? <p className="font-medium">Covered by your Membership Plan</p>
-                          : <p className="font-medium">Booking completed successfully. Thank you for choosing us!</p>
-                      )
-                      : <p className="font-medium">Total Amount: <span className="text-lg font-black ml-1">₹{(booking.finalAmount || booking.totalAmount || 0).toLocaleString('en-IN')}</span></p>
-                    }
-                    {booking.paymentStatus !== 'success' && <p className="text-[10px] text-orange-100 mt-0.5 opacity-80">Pay online above or prepare cash for the professional.</p>}
-                  </div>
-                </div>
-              </div>
+                {booking.paymentStatus === 'success' ? 'Paid' :
+                  booking.paymentStatus === 'plan_covered' ? 'Processing Bill' :
+                    booking.paymentStatus || 'Pending'}
+              </span>
             </div>
-          </div>
-        )}
+          </section>
 
-        {/* Location & Time Section */}
-        <section className="space-y-4">
-          {/* Map Preview - Improved overlay for better usability */}
-          {booking.address && (
-            <>
-              <div className="group relative rounded-3xl overflow-hidden shadow-sm border border-gray-200 bg-gray-100 h-48">
-                {(() => {
-                  let mapQuery = '';
-                  if (typeof booking.address === 'object' && booking.address.lat && booking.address.lng) {
-                    mapQuery = `${booking.address.lat},${booking.address.lng}`;
-                  } else {
-                    const addrStr = typeof booking.address === 'string'
-                      ? booking.address
-                      : `${booking.address?.addressLine1 || ''}, ${booking.address?.city || ''}`;
-                    mapQuery = encodeURIComponent(addrStr);
-                  }
-                  return (
-                    <iframe
-                      className="w-full h-full opacity-80 group-hover:opacity-100 transition-opacity"
-                      frameBorder="0"
-                      style={{ border: 0, pointerEvents: 'none' }}
-                      src={`https://maps.google.com/maps?q=${mapQuery}&z=15&output=embed`}
-                      allowFullScreen
-                      tabIndex="-1"
-                      title="Location"
-                    />
-                  )
-                })()}
-
-                {/* Floating Info */}
-                <div className="absolute top-4 left-4 right-4 flex justify-between pointer-events-none">
-                  <div className="bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-xl shadow-sm border border-white/50 flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]"></span>
-                    <span className="text-xs font-bold text-gray-700">Destination</span>
-                  </div>
+          {/* Action Card for Awaiting Payment */}
+          {booking.status === 'awaiting_payment' && (
+            <div className="bg-white rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100 p-6 space-y-4">
+              <div className="text-center mb-4">
+                <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <FiDollarSign className="w-8 h-8 text-orange-600" />
                 </div>
-
-                {/* Track Button Overlay - Always visible but distinct */}
-                <div className="absolute inset-0 flex items-center justify-center bg-transparent pointer-events-none">
-                  <div className="pointer-events-auto bg-white text-gray-900 px-5 py-2.5 rounded-full text-sm font-bold flex items-center gap-2 shadow-lg hover:scale-105 active:scale-95 transition-all border border-gray-100" onClick={() => navigate(`/user/booking/${booking._id || booking.id}/track`)}>
-                    <FiMapPin className="w-4 h-4 text-red-500" /> View on Map
-                  </div>
-                </div>
+                <h3 className="text-lg font-bold text-black">Payment Required</h3>
+                <p className="text-sm text-gray-500">The vendor has accepted your request. Please choose a payment method to confirm your booking.</p>
               </div>
 
-              {/* Dedicated Track Button */}
-              {['confirmed', 'assigned', 'journey_started', 'visited', 'in_progress'].includes(booking.status?.toLowerCase()) && (
+              <div className="grid grid-cols-1 gap-3">
                 <button
-                  onClick={() => navigate(`/user/booking/${booking._id || booking.id}/track`)}
-                  className="w-full py-4 bg-gradient-to-r from-gray-900 to-gray-800 text-white rounded-2xl font-bold shadow-lg shadow-gray-200 active:scale-95 transition-all flex items-center justify-center gap-3 hover:shadow-xl"
+                  onClick={handleOnlinePayment}
+                  className="w-full py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-transform"
+                  style={{ background: themeColors.button }}
                 >
-                  <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-                    <FiMapPin className="w-4 h-4 text-white" />
-                  </div>
-                  Track Service Agent
+                  <FiDollarSign className="w-5 h-5" />
+                  Pay Online (Razorpay/UPI)
                 </button>
-              )}
-            </>
+
+                <button
+                  onClick={handlePayAtHome}
+                  className="w-full py-4 rounded-xl font-bold text-gray-700 bg-gray-100 flex items-center justify-center gap-2 active:scale-95 transition-transform"
+                >
+                  <FiHome className="w-5 h-5" />
+                  Pay at Home (After Service)
+                </button>
+              </div>
+            </div>
           )}
 
-          <div className="bg-white rounded-3xl p-5 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100">
-            <div className="flex items-start gap-4 mb-4">
-              <div className="w-10 h-10 rounded-2xl bg-teal-50 flex items-center justify-center shrink-0">
-                <FiMapPin className="w-5 h-5 text-teal-600" />
-              </div>
-              <div className="flex-1">
-                <p className="text-xs text-gray-400 font-bold uppercase tracking-wide mb-1">Service Address</p>
-                <p className="text-sm font-medium text-gray-900 leading-relaxed">{getAddressString(booking.address)}</p>
-              </div>
-            </div>
-            <div className="w-full h-px bg-gray-50 mb-4"></div>
-            <div className="flex items-start gap-4">
-              <div className="w-10 h-10 rounded-2xl bg-indigo-50 flex items-center justify-center shrink-0">
-                <FiCalendar className="w-5 h-5 text-indigo-600" />
-              </div>
-              <div className="flex-1">
-                <p className="text-xs text-gray-400 font-bold uppercase tracking-wide mb-1">Schedule</p>
-                <p className="text-sm font-medium text-gray-900">
-                  {formatDate(booking.scheduledDate)}
-                </p>
-                <p className="text-sm text-gray-500">{booking.scheduledTime || booking.timeSlot?.start || 'N/A'}</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Service Details */}
-        <section className="bg-white rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100 overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-50 bg-gray-50/50 flex justify-between items-center">
-            <h3 className="font-bold text-gray-900">Order Summary</h3>
-            <span className="text-xs font-semibold px-2 py-1 bg-white border border-gray-200 rounded text-gray-500">
-              {booking.serviceCategory || 'Service'}
-            </span>
-          </div>
-
-          <div className="p-5">
-            <div className="flex gap-4">
-              <div className="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center shrink-0">
-                <FiPackage className="w-8 h-8 text-gray-400" />
-              </div>
-              <div>
-                <h4 className="font-bold text-gray-900">{booking.serviceName || 'Service'}</h4>
-                {booking.description && <p className="text-xs text-gray-500 mt-1 line-clamp-2">{booking.description}</p>}
-              </div>
-            </div>
-
-            {/* Items List */}
-            {booking.bookedItems && booking.bookedItems.length > 0 ? (
-              <div className="mt-5 space-y-3">
-                {booking.bookedItems.map((item, idx) => (
-                  <div key={idx} className="flex justify-between items-start pt-3 border-t border-dashed border-gray-100">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-gray-400">x{item.quantity}</span>
-                        <span className="text-sm font-medium text-gray-800">{item.card?.title || item.title}</span>
-                      </div>
-                      {(item.card?.subtitle) && <p className="text-xs text-gray-400 ml-6">{item.card.subtitle}</p>}
-                    </div>
-                    <span className="text-sm font-semibold text-gray-900">₹{(item.card?.price || 0).toLocaleString('en-IN')}</span>
-                  </div>
-                ))}
-              </div>
-            ) : booking.userNotes ? (
-              <div className="mt-4 p-3 bg-gray-50 rounded-xl">
-                <p className="text-xs font-bold text-gray-500 mb-1">Notes</p>
-                <p className="text-sm text-gray-800">{booking.userNotes.replace('Items: ', '')}</p>
-              </div>
-            ) : null}
-          </div>
-        </section>
-
-        {/* Payment Summary - Professional Card */}
-        <section className="bg-white rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100 overflow-hidden">
-          <div className="p-5">
-            <div className="flex items-center gap-2 mb-4 pb-2 border-b border-gray-100">
-              <div className={`p-2 rounded-lg ${booking.paymentMethod === 'plan_benefit' ? 'bg-amber-100' : 'bg-green-50'}`}>
-                {booking.paymentMethod === 'plan_benefit' ? (
-                  <FiAward className="w-5 h-5 text-amber-600" />
-                ) : (
-                  <FiDollarSign className="w-5 h-5 text-green-600" />
-                )}
-              </div>
-              <div className="flex-1">
-                <h3 className="font-bold text-gray-900">
-                  {booking.paymentMethod === 'plan_benefit' ? 'Membership Benefit' : 'Payment Summary'}
-                </h3>
-              </div>
-            </div>
-
-            <div className="space-y-3 text-sm">
-              {/* Base Items */}
-              <div className="flex justify-between items-center text-gray-600">
-                <span>Base Price</span>
-                {booking.paymentMethod === 'plan_benefit' ? (
-                  <div className="flex items-center gap-2">
-                    <span className="line-through text-gray-400 text-xs">₹{(booking.basePrice || 0).toLocaleString('en-IN')}</span>
-                    <span className="text-emerald-600 font-bold text-xs bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">FREE ✓</span>
-                  </div>
-                ) : (
-                  <span className="font-medium text-gray-900">₹{(booking.basePrice || 0).toLocaleString('en-IN')}</span>
-                )}
-              </div>
-
-              {(booking.tax > 0 || booking.paymentMethod === 'plan_benefit') && (
-                <div className="flex justify-between items-center text-gray-600">
-                  <span>GST (18%)</span>
-                  {booking.paymentMethod === 'plan_benefit' ? (
-                    <div className="flex items-center gap-2">
-                      <span className="line-through text-gray-400 text-xs">₹{(booking.tax || 0).toLocaleString('en-IN')}</span>
-                      <span className="text-emerald-600 font-bold text-xs bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">FREE ✓</span>
-                    </div>
-                  ) : (
-                    <span className="font-medium text-gray-900">₹{(booking.tax || 0).toLocaleString('en-IN')}</span>
-                  )}
-                </div>
-              )}
-
-              {(booking.visitingCharges > 0 || booking.visitationFee > 0 || booking.paymentMethod === 'plan_benefit') && (
-                <div className="flex justify-between items-center text-gray-600">
-                  <span>Convenience Fee</span>
-                  {booking.paymentMethod === 'plan_benefit' ? (
-                    <div className="flex items-center gap-2">
-                      <span className="line-through text-gray-400 text-xs">₹{(booking.visitingCharges || booking.visitationFee || 0).toLocaleString('en-IN')}</span>
-                      <span className="text-emerald-600 font-bold text-xs bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">FREE ✓</span>
-                    </div>
-                  ) : (
-                    <span className="font-medium text-gray-900">₹{(booking.visitingCharges || booking.visitationFee || 0).toLocaleString('en-IN')}</span>
-                  )}
-                </div>
-              )}
-
-              {booking.paymentMethod !== 'plan_benefit' && booking.discount > 0 && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-green-600">Discount</span>
-                  <span className="font-medium text-green-600">-₹{booking.discount.toLocaleString('en-IN')}</span>
-                </div>
-              )}
-
-              {/* Extra Charges Section */}
-              {booking.extraCharges && booking.extraCharges.length > 0 && (
-                <div className="mt-3 pt-3 border-t border-dashed border-gray-200">
-                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Extra Charges</p>
-                  <div className="bg-gray-50 rounded-lg p-3 space-y-2 border border-gray-100">
-                    {booking.extraCharges.map((item, idx) => (
-                      <div key={idx} className="flex justify-between text-gray-700 text-sm">
-                        <span className="flex items-center gap-2">
-                          <span className="text-xs font-bold bg-white border px-1.5 rounded text-gray-500">x{item.quantity || 1}</span>
-                          <span>{item.name}</span>
-                        </span>
-                        <span className="font-medium">+₹{(item.total || item.price || 0).toLocaleString('en-IN')}</span>
-                      </div>
-                    ))}
-                    <div className="flex justify-between font-bold text-blue-600 pt-2 mt-2 border-t border-gray-200">
-                      <span>Total Extras</span>
-                      <span>+₹{(booking.extraChargesTotal || 0).toLocaleString('en-IN')}</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div className="pt-4 mt-2 border-t border-gray-100 flex justify-between items-center">
-                <span className="font-bold text-gray-900 text-lg">Total Payable</span>
-                <span className="font-black text-gray-900 text-xl">
-                  ₹{(booking.paymentMethod === 'plan_benefit'
-                    ? (booking.userPayableAmount || booking.extraChargesTotal || 0)
-                    : (booking.finalAmount || booking.totalAmount || 0)
-                  ).toLocaleString('en-IN')}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Payment Status Footer */}
-          <div className="bg-gray-50 px-5 py-3 border-t border-gray-100 flex justify-between items-center">
-            <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">Payment Status</span>
-            <span className={`px-2.5 py-1 rounded-md text-xs font-bold capitalize ${booking.paymentStatus === 'success' ? 'bg-green-100 text-green-700' :
-              booking.paymentStatus === 'pending' || booking.paymentStatus === 'plan_covered' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
-              }`}>
-              {booking.paymentStatus === 'success' ? 'Paid' :
-                booking.paymentStatus === 'plan_covered' ? 'Processing Bill' :
-                  booking.paymentStatus || 'Pending'}
-            </span>
-          </div>
-        </section>
-
-        {/* Action Card for Awaiting Payment */}
-        {booking.status === 'awaiting_payment' && (
-          <div className="bg-white rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100 p-6 space-y-4">
-            <div className="text-center mb-4">
-              <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <FiDollarSign className="w-8 h-8 text-orange-600" />
-              </div>
-              <h3 className="text-lg font-bold text-black">Payment Required</h3>
-              <p className="text-sm text-gray-500">The vendor has accepted your request. Please choose a payment method to confirm your booking.</p>
-            </div>
-
-            <div className="grid grid-cols-1 gap-3">
-              <button
-                onClick={handleOnlinePayment}
-                className="w-full py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-transform"
-                style={{ background: themeColors.button }}
-              >
-                <FiDollarSign className="w-5 h-5" />
-                Pay Online (Razorpay/UPI)
-              </button>
-
-              <button
-                onClick={handlePayAtHome}
-                className="w-full py-4 rounded-xl font-bold text-gray-700 bg-gray-100 flex items-center justify-center gap-2 active:scale-95 transition-transform"
-              >
-                <FiHome className="w-5 h-5" />
-                Pay at Home (After Service)
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Action Buttons */}
-        <div className="grid grid-cols-2 gap-4">
-          {/* Support */}
-          <button className="col-span-1 flex flex-col items-center justify-center gap-2 p-4 bg-white border border-gray-200 rounded-2xl hover:bg-gray-50 transition-colors active:scale-95">
-            <FiPhone className="w-6 h-6 text-gray-700" />
-            <span className="text-sm font-bold text-gray-700">Call Support</span>
-          </button>
-          <button className="col-span-1 flex flex-col items-center justify-center gap-2 p-4 bg-white border border-gray-200 rounded-2xl hover:bg-gray-50 transition-colors active:scale-95">
-            <FiMail className="w-6 h-6 text-gray-700" />
-            <span className="text-sm font-bold text-gray-700">Email Help</span>
-          </button>
-
-          {/* Cancel */}
-          {!['cancelled', 'completed', 'work_done'].includes(booking.status?.toLowerCase()) && (
-            <button
-              onClick={handleCancelBooking}
-              className="col-span-2 py-4 rounded-2xl text-red-600 font-bold text-sm bg-red-50 border border-red-100 hover:bg-red-100 transition-colors active:scale-95"
-            >
-              Cancel Booking
+          {/* Action Buttons */}
+          <div className="grid grid-cols-2 gap-4">
+            {/* Support */}
+            <button className="col-span-1 flex flex-col items-center justify-center gap-2 p-4 bg-white border border-gray-200 rounded-2xl hover:bg-gray-50 transition-colors active:scale-95">
+              <FiPhone className="w-6 h-6 text-gray-700" />
+              <span className="text-sm font-bold text-gray-700">Call Support</span>
             </button>
-          )}
-        </div>
+            <button className="col-span-1 flex flex-col items-center justify-center gap-2 p-4 bg-white border border-gray-200 rounded-2xl hover:bg-gray-50 transition-colors active:scale-95">
+              <FiMail className="w-6 h-6 text-gray-700" />
+              <span className="text-sm font-bold text-gray-700">Email Help</span>
+            </button>
 
-        {/* Rate & Review (Conditional) */}
-        {/* Rate & Review (Conditional) */}
-        <ReviewCard
-          booking={booking}
-          onWriteReview={() => setShowRatingModal(true)}
+            {/* Cancel */}
+            {!['cancelled', 'completed', 'work_done'].includes(booking.status?.toLowerCase()) && (
+              <button
+                onClick={handleCancelBooking}
+                className="col-span-2 py-4 rounded-2xl text-red-600 font-bold text-sm bg-red-50 border border-red-100 hover:bg-red-100 transition-colors active:scale-95"
+              >
+                Cancel Booking
+              </button>
+            )}
+          </div>
+
+          {/* Rate & Review (Conditional) */}
+          {/* Rate & Review (Conditional) */}
+          <ReviewCard
+            booking={booking}
+            onWriteReview={() => setShowRatingModal(true)}
+          />
+
+        </main>
+
+        {/* Rating Modal */}
+        <RatingModal
+          isOpen={showRatingModal}
+          onClose={() => {
+            setShowRatingModal(false);
+            localStorage.setItem(`rating_dismissed_${id}`, 'true');
+          }}
+          onSubmit={handleRateSubmit}
+          bookingName={booking.serviceName || booking.serviceCategory || 'Service'}
+          workerName={booking.workerId?.name || (booking.assignedTo?.name === 'You (Self)' ? 'Service Provider' : (booking.assignedTo?.name || 'Worker'))}
         />
 
-      </main>
+        {/* Payment Verification Modal */}
+        <PaymentVerificationModal
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          booking={booking}
+          onPayOnline={handleOnlinePayment}
+        />
 
-      {/* Rating Modal */}
-      <RatingModal
-        isOpen={showRatingModal}
-        onClose={() => {
-          setShowRatingModal(false);
-          localStorage.setItem(`rating_dismissed_${id}`, 'true');
-        }}
-        onSubmit={handleRateSubmit}
-        bookingName={booking.serviceName || booking.serviceCategory || 'Service'}
-        workerName={booking.workerId?.name || (booking.assignedTo?.name === 'You (Self)' ? 'Service Provider' : (booking.assignedTo?.name || 'Worker'))}
-      />
-
-      {/* Payment Verification Modal */}
-      <PaymentVerificationModal
-        isOpen={showPaymentModal}
-        onClose={() => setShowPaymentModal(false)}
-        booking={booking}
-        onPayOnline={handleOnlinePayment}
-      />
-
-      <ConfirmDialog
-        isOpen={confirmDialog.isOpen}
-        onClose={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
-        onConfirm={confirmDialog.onConfirm}
-        title={confirmDialog.title}
-        message={confirmDialog.message}
-        type={confirmDialog.type}
-      />
+        <ConfirmDialog
+          isOpen={confirmDialog.isOpen}
+          onClose={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
+          onConfirm={confirmDialog.onConfirm}
+          title={confirmDialog.title}
+          message={confirmDialog.message}
+          type={confirmDialog.type}
+        />
+      </div>
     </div>
   );
 };

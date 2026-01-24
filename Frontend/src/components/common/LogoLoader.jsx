@@ -1,21 +1,33 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-const LogoLoader = ({ fullScreen = true, size = "w-32 h-32" }) => {
+/**
+ * LogoLoader Component
+ * @param {boolean} fullScreen - If true, shows a full-screen overlay (for initial app load). 
+ *                               If false, shows an inline loader (for route transitions).
+ * @param {boolean} overlay - If true with fullScreen, uses solid white background. 
+ *                            If false, uses transparent background (doesn't hide BottomNav).
+ * @param {string} size - Size classes for the logo
+ */
+const LogoLoader = ({ fullScreen = false, overlay = false, size = "w-20 h-20" }) => {
+  // For route transitions (default), use a non-blocking loader
+  // For initial app load, use fullScreen with overlay
   const containerClasses = fullScreen
-    ? "fixed inset-0 flex items-center justify-center bg-white z-[9999]"
-    : "flex items-center justify-center w-full h-full min-h-[200px]";
+    ? overlay
+      ? "fixed inset-0 flex items-center justify-center bg-white z-[9999]"
+      : "fixed inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm z-[100]"
+    : "flex items-center justify-center w-full min-h-[60vh] pb-20"; // Leave space for bottom nav
 
   return (
     <div className={containerClasses}>
       <motion.div
-        initial={{ scale: 0.8, opacity: 0.5 }}
+        initial={{ scale: 0.9, opacity: 0.7 }}
         animate={{
-          scale: [0.8, 1.1, 0.8],
-          opacity: [0.5, 1, 0.5],
+          scale: [0.9, 1.05, 0.9],
+          opacity: [0.7, 1, 0.7],
         }}
         transition={{
-          duration: 1.5,
+          duration: 1.2,
           repeat: Infinity,
           ease: "easeInOut"
         }}
@@ -26,15 +38,15 @@ const LogoLoader = ({ fullScreen = true, size = "w-32 h-32" }) => {
           alt="Loading..."
           className="w-full h-full object-contain"
         />
-        {/* Optional: Add a ripple effect or ring behind it */}
+        {/* Subtle ripple effect */}
         <motion.div
-          className="absolute inset-0 rounded-full border-4 border-blue-100"
+          className="absolute inset-0 rounded-full border-2 border-teal-200"
           animate={{
-            scale: [1, 1.5],
-            opacity: [1, 0]
+            scale: [1, 1.4],
+            opacity: [0.6, 0]
           }}
           transition={{
-            duration: 1.5,
+            duration: 1,
             repeat: Infinity,
             ease: "easeOut"
           }}

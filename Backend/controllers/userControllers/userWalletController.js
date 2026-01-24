@@ -138,8 +138,27 @@ const verifyWalletTopup = async (req, res) => {
     }
 
     // Add money to wallet
-    user.wallet.balance = (user.wallet.balance || 0) + amount;
+    const previousBalance = user.wallet.balance || 0;
+    user.wallet.balance = previousBalance + amount;
     await user.save();
+
+    // Create Transaction Record
+    const Transaction = require('../../models/Transaction');
+    await Transaction.create({
+      userId: user._id,
+      type: 'credit',
+      amount: amount,
+      status: 'completed',
+      paymentMethod: 'razorpay', // or online
+      description: 'Wallet Top-up',
+      balanceBefore: previousBalance,
+      balanceAfter: user.wallet.balance,
+      referenceId: razorpay_payment_id,
+      metadata: {
+        orderId: razorpay_order_id,
+        signature: razorpay_signature
+      }
+    });
 
     res.status(200).json({
       success: true,
@@ -165,45 +184,34 @@ const getWalletTransactions = async (req, res) => {
     const userId = req.user.id;
     const { page = 1, limit = 20 } = req.query;
 
-    // TODO: Create WalletTransaction model for detailed transaction history
-    // For now, return booking-related transactions from Booking model
-
-    const Booking = require('../../models/Booking');
-    const { PAYMENT_STATUS } = require('../../utils/constants');
+    const Transaction = require('../../models/Transaction');
 
     // Pagination
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
-    // Get bookings with wallet payments
-    const bookings = await Booking.find({
-      userId,
-      paymentMethod: 'wallet',
-      paymentStatus: PAYMENT_STATUS.SUCCESS
-    })
-      .select('bookingNumber finalAmount createdAt paymentMethod')
+    // Get transactions
+    const transactions = await Transaction.find({ userId })
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
 
     // Get total count
-    const total = await Booking.countDocuments({
-      userId,
-      paymentMethod: 'wallet',
-      paymentStatus: PAYMENT_STATUS.SUCCESS
-    });
+    const total = await Transaction.countDocuments({ userId });
 
     // Format transactions
-    const transactions = bookings.map(booking => ({
-      id: booking._id,
-      type: 'debit',
-      amount: booking.finalAmount,
-      description: `Payment for booking ${booking.bookingNumber}`,
-      date: booking.createdAt
+    const formattedTransactions = transactions.map(txn => ({
+      id: txn._id,
+      type: txn.type, // 'credit', 'debit', 'refund', 'penalty' etc.
+      amount: txn.amount,
+      description: txn.description,
+      date: txn.createdAt,
+      status: txn.status,
+      balanceAfter: txn.balanceAfter
     }));
 
     res.status(200).json({
       success: true,
-      data: transactions,
+      data: formattedTransactions,
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
@@ -226,4 +234,3 @@ module.exports = {
   verifyWalletTopup,
   getWalletTransactions
 };
-

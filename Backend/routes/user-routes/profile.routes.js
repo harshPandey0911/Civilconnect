@@ -8,7 +8,7 @@ const { getProfile, updateProfile } = require('../../controllers/userControllers
 // Validation rules
 const updateProfileValidation = [
   body('name').optional().trim().isLength({ min: 2, max: 50 }).withMessage('Name must be between 2 and 50 characters'),
-  body('email').optional().isEmail().withMessage('Please provide a valid email')
+  body('email').optional({ nullable: true, checkFalsy: true }).isEmail().withMessage('Please provide a valid email')
 ];
 
 // Routes

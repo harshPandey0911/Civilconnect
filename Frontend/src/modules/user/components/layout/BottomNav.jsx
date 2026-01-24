@@ -1,23 +1,75 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FiHome, FiGift, FiShoppingCart, FiUser, FiTrash2, FiCalendar } from 'react-icons/fi';
 import { HiHome, HiGift, HiShoppingCart, HiUser, HiTrash, HiCalendar } from 'react-icons/hi';
-import { gsap } from 'gsap';
-import { themeColors } from '../../../../theme';
+import { motion, AnimatePresence } from 'framer-motion';
+
+// Colorful theme for each nav item
+const navItemColors = {
+  home: {
+    primary: '#3B82F6', // Blue
+    gradient: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)',
+    bg: 'rgba(59, 130, 246, 0.1)',
+    shadow: 'rgba(59, 130, 246, 0.4)'
+  },
+  bookings: {
+    primary: '#10B981', // Emerald
+    gradient: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+    bg: 'rgba(16, 185, 129, 0.1)',
+    shadow: 'rgba(16, 185, 129, 0.4)'
+  },
+  scrap: {
+    primary: '#F59E0B', // Amber
+    gradient: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
+    bg: 'rgba(245, 158, 11, 0.1)',
+    shadow: 'rgba(245, 158, 11, 0.4)'
+  },
+  cart: {
+    primary: '#EC4899', // Pink
+    gradient: 'linear-gradient(135deg, #EC4899 0%, #DB2777 100%)',
+    bg: 'rgba(236, 72, 153, 0.1)',
+    shadow: 'rgba(236, 72, 153, 0.4)'
+  },
+  account: {
+    primary: '#8B5CF6', // Violet
+    gradient: 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)',
+    bg: 'rgba(139, 92, 246, 0.1)',
+    shadow: 'rgba(139, 92, 246, 0.4)'
+  }
+};
 
 const BottomNav = React.memo(() => {
   const navigate = useNavigate();
   const location = useLocation();
-  const iconRefs = useRef({});
-  const activeAnimations = useRef({});
-  const [iconTransitions, setIconTransitions] = React.useState({});
+  const navRef = useRef(null);
   const [cartCount, setCartCount] = useState(0);
+  const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 });
+
+  const navItems = useMemo(() => [
+    { id: 'home', label: 'Home', icon: FiHome, filledIcon: HiHome, path: '/user' },
+    { id: 'bookings', label: 'Bookings', icon: FiCalendar, filledIcon: HiCalendar, path: '/user/my-bookings' },
+    { id: 'scrap', label: 'Scrap', icon: FiTrash2, filledIcon: HiTrash, path: '/user/scrap' },
+    { id: 'cart', label: 'Cart', icon: FiShoppingCart, filledIcon: HiShoppingCart, path: '/user/cart', isCart: true },
+    { id: 'account', label: 'Account', icon: FiUser, filledIcon: HiUser, path: '/user/account' },
+  ], []);
+
+  const getActiveTab = () => {
+    if (location.pathname === '/user' || location.pathname === '/user/') return 'home';
+    if (location.pathname === '/user/my-bookings') return 'bookings';
+    if (location.pathname === '/user/scrap') return 'scrap';
+    if (location.pathname === '/user/cart') return 'cart';
+    if (location.pathname === '/user/account') return 'account';
+    return 'home';
+  };
+
+  const activeTab = getActiveTab();
+  const activeIndex = navItems.findIndex(item => item.id === activeTab);
+  const activeColor = navItemColors[activeTab];
 
   // Load cart count from backend
   useEffect(() => {
     const loadCartCount = async () => {
       try {
-        // Check if user is logged in
         const token = localStorage.getItem('accessToken');
         if (!token) {
           setCartCount(0);
@@ -30,122 +82,41 @@ const BottomNav = React.memo(() => {
           setCartCount((response.data || []).length);
         }
       } catch (error) {
-        // Silently fail if user not authenticated
-        if (error.response?.status === 401 || error.response?.status === 403) {
-          setCartCount(0);
-        } else {
-          setCartCount(0);
-        }
+        setCartCount(0);
       }
     };
 
     loadCartCount();
-    // Refresh cart count every 10 seconds
-    // const interval = setInterval(loadCartCount, 10000);
-    // Remove polling to prevent console spam - relying on focus and route changes instead
 
-    // Also listen for focus to update when user returns to tab
     const handleFocus = () => {
       loadCartCount();
     };
     window.addEventListener('focus', handleFocus);
 
     return () => {
-      // clearInterval(interval);
       window.removeEventListener('focus', handleFocus);
     };
   }, []);
 
-  // Cleanup animations on unmount
+  // Update indicator position when active tab changes
   useEffect(() => {
-    return () => {
-      Object.values(activeAnimations.current).forEach(anim => {
-        if (anim && anim.isActive()) {
-          // Don't kill if still active, let it complete
-        }
-      });
-    };
-  }, []);
+    if (navRef.current) {
+      const buttons = navRef.current.querySelectorAll('button');
+      if (buttons[activeIndex]) {
+        const button = buttons[activeIndex];
+        const navRect = navRef.current.getBoundingClientRect();
+        const buttonRect = button.getBoundingClientRect();
 
-  const navItems = [
-    { id: 'home', label: 'Home', icon: FiHome, filledIcon: HiHome, path: '/user' },
-    { id: 'bookings', label: 'Bookings', icon: FiCalendar, filledIcon: HiCalendar, path: '/user/my-bookings' },
-    { id: 'scrap', label: 'Scrap', icon: FiTrash2, filledIcon: HiTrash, path: '/user/scrap' },
-    { id: 'cart', label: 'Cart', icon: FiShoppingCart, filledIcon: HiShoppingCart, path: '/user/cart', isCart: true },
-    { id: 'account', label: 'Account', icon: FiUser, filledIcon: HiUser, path: '/user/account' },
-  ];
-
-  const getActiveTab = () => {
-    if (location.pathname === '/user' || location.pathname === '/user/') return 'home';
-    if (location.pathname === '/user/my-bookings') return 'bookings';
-    if (location.pathname === '/user/scrap') return 'scrap';
-    if (location.pathname === '/user/cart') return 'cart';
-    if (location.pathname === '/user/account') return 'account';
-    return 'home';
-  };
-
-  const activeTab = getActiveTab();
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
-
-  // Mark initial load as complete after first render
-  useEffect(() => {
-    // Use requestIdleCallback or setTimeout to defer after page load
-    const timer = setTimeout(() => {
-      setIsInitialLoad(false);
-    }, 100);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Smooth icon transition when active state changes - slow fade
-  // Only run animations after initial load to avoid blocking page render
-  useEffect(() => {
-    // Skip animation on initial load
-    if (isInitialLoad) {
-      // Set initial state without animation
-      navItems.forEach((item) => {
-        const isActive = activeTab === item.id;
-        setIconTransitions(prev => ({
-          ...prev,
-          [item.id]: { isActive, opacity: 1 }
-        }));
-      });
-      return;
+        setIndicatorStyle({
+          left: buttonRect.left - navRect.left + (buttonRect.width / 2) - 16, // Center the 32px indicator
+          width: 32
+        });
+      }
     }
+  }, [activeIndex, activeTab]);
 
-    // Run animation only on route changes (not initial load)
-    navItems.forEach((item) => {
-      const isActive = activeTab === item.id;
-      setIconTransitions(prev => ({
-        ...prev,
-        [item.id]: { isActive, opacity: 0 }
-      }));
-
-      // Slow fade in new icon
-      setTimeout(() => {
-        setIconTransitions(prev => ({
-          ...prev,
-          [item.id]: { isActive, opacity: 1 }
-        }));
-      }, 200);
-    });
-  }, [activeTab, isInitialLoad]);
-
-  const handleTabClick = (path, itemId) => {
-    // Navigate immediately for better performance - no delays
+  const handleTabClick = (path) => {
     navigate(path);
-
-    // Optional: Simple CSS animation without blocking navigation
-    const iconRef = iconRefs.current[itemId];
-    if (iconRef) {
-      // Simple scale animation without GSAP delays
-      iconRef.style.transition = 'transform 0.2s ease';
-      iconRef.style.transform = 'scale(1.15)';
-      setTimeout(() => {
-        if (iconRef) {
-          iconRef.style.transform = 'scale(1)';
-        }
-      }, 150);
-    }
   };
 
   return (
@@ -156,74 +127,99 @@ const BottomNav = React.memo(() => {
       }}
     >
       <div
-        className="w-full pb-4 pt-2 px-2"
+        className="w-full pb-4 pt-3 px-2"
         style={{
-          background: 'rgba(255, 255, 255, 0.95)',
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-          boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.05)',
-          borderTop: '1px solid rgba(229, 231, 235, 0.5)',
+          background: 'rgba(255, 255, 255, 0.98)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          boxShadow: '0 -4px 30px rgba(0, 0, 0, 0.08)',
+          borderTop: '1px solid rgba(229, 231, 235, 0.6)',
         }}
       >
-        <div className="flex items-center justify-around max-w-md mx-auto relative">
+        <div ref={navRef} className="flex items-center justify-around max-w-md mx-auto relative">
 
+          {/* Animated Sliding Indicator */}
+          <motion.div
+            className="absolute -top-3 h-1 rounded-full"
+            animate={{
+              left: indicatorStyle.left,
+              width: indicatorStyle.width,
+              background: activeColor?.gradient || navItemColors.home.gradient,
+            }}
+            transition={{
+              type: "spring",
+              stiffness: 380,
+              damping: 30
+            }}
+            style={{
+              boxShadow: `0 2px 12px ${activeColor?.shadow || navItemColors.home.shadow}`,
+            }}
+          />
 
           {navItems.map((item) => {
             const IconComponent = activeTab === item.id ? item.filledIcon : item.icon;
             const isActive = activeTab === item.id;
+            const itemColor = navItemColors[item.id];
 
             return (
-              <button
+              <motion.button
                 key={item.id}
-                onClick={() => {
-                  handleTabClick(item.path, item.id);
-                }}
-                className={`flex flex-col items-center justify-center w-16 h-14 rounded-xl transition-all duration-300 relative group`}
+                onClick={() => handleTabClick(item.path)}
+                whileTap={{ scale: 0.9 }}
+                className="flex flex-col items-center justify-center w-16 h-14 rounded-2xl transition-all duration-200 relative"
               >
-                {/* Active Indicator Bar */}
-                {isActive && (
-                  <div
-                    className="absolute -top-2 w-8 h-1 rounded-b-full"
-                    style={{
-                      background: themeColors.gradient,
-                      boxShadow: `0 2px 8px ${themeColors.brand.teal}4D`,
-                    }}
-                  />
-                )}
-
-                {/* Active Background - Very Subtle Teal Tint */}
-                {isActive && (
-                  <div
-                    className="absolute inset-0 rounded-xl scale-90"
-                    style={{ backgroundColor: `${themeColors.brand.teal}0A` }}
-                  />
-                )}
+                {/* Active Background Glow */}
+                <AnimatePresence>
+                  {isActive && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute inset-1 rounded-xl"
+                      style={{
+                        background: itemColor.bg,
+                      }}
+                    />
+                  )}
+                </AnimatePresence>
 
                 <div className="relative z-10 flex flex-col items-center justify-center">
-                  <div className="relative mb-1">
+                  <motion.div
+                    className="relative mb-1"
+                    animate={{
+                      scale: isActive ? 1.1 : 1,
+                      y: isActive ? -2 : 0
+                    }}
+                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                  >
                     <IconComponent
-                      className={`w-6 h-6 transition-all duration-300 ${isActive ? 'scale-110' : 'text-gray-400 group-hover:text-gray-600'}`}
+                      className="w-6 h-6 transition-colors duration-200"
                       style={{
-                        color: isActive ? themeColors.button : undefined,
-                        filter: isActive ? `drop-shadow(0 2px 4px ${themeColors.brand.teal}1A)` : 'none'
+                        color: isActive ? itemColor.primary : '#9CA3AF',
                       }}
                     />
                     {item.isCart && cartCount > 0 && (
-                      <span
-                        className="absolute -top-1.5 -right-1.5 bg-gradient-to-br from-red-500 to-red-600 text-white text-[9px] font-bold rounded-full min-w-[16px] h-[16px] flex items-center justify-center border-2 border-white shadow-sm"
+                      <motion.span
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="absolute -top-1.5 -right-2.5 bg-gradient-to-br from-red-500 to-red-600 text-white text-[9px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center border-2 border-white shadow-lg"
                       >
                         {cartCount > 9 ? '9+' : cartCount}
-                      </span>
+                      </motion.span>
                     )}
-                  </div>
-                  <span
-                    className={`text-[10px] transition-colors duration-300 ${isActive ? 'font-bold' : 'font-medium text-gray-500'}`}
-                    style={{ color: isActive ? themeColors.button : undefined }}
+                  </motion.div>
+                  <motion.span
+                    animate={{
+                      color: isActive ? itemColor.primary : '#6B7280',
+                      fontWeight: isActive ? 600 : 500
+                    }}
+                    className="text-[10px]"
                   >
                     {item.label}
-                  </span>
+                  </motion.span>
                 </div>
-              </button>
+              </motion.button>
             );
           })}
         </div>
@@ -235,4 +231,3 @@ const BottomNav = React.memo(() => {
 BottomNav.displayName = 'BottomNav';
 
 export default BottomNav;
-

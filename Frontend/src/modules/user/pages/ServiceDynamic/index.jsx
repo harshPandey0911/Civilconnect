@@ -72,6 +72,7 @@ const ServiceDynamic = () => {
   const [selectedCard, setSelectedCard] = useState(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const bannerRef = useRef(null);
+  const isShareInProgress = useRef(false);
 
   useEffect(() => {
     const fetchService = async () => {
@@ -127,6 +128,57 @@ const ServiceDynamic = () => {
   }, [service]);
 
   const handleBack = () => navigate('/user');
+
+  const handleShare = async () => {
+    // Prevent multiple simultaneous share attempts
+    if (isShareInProgress.current) return;
+    isShareInProgress.current = true;
+
+    const shareData = {
+      title: service?.title || 'Service',
+      text: service?.page?.description || `Check out ${service?.title || 'this service'} on Appzeto`,
+      url: window.location.href,
+    };
+
+    try {
+      // Check if Web Share API is available (typically on mobile)
+      if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+        try {
+          await navigator.share(shareData);
+        } catch (err) {
+          // User cancelled or share failed - ignore AbortError
+          if (err.name !== 'AbortError') {
+            console.error('Share failed:', err);
+          }
+        }
+      } else {
+        // Fallback: Copy link to clipboard
+        try {
+          await navigator.clipboard.writeText(window.location.href);
+          toast.success('Link copied to clipboard!');
+        } catch (err) {
+          // Fallback for older browsers
+          const textArea = document.createElement('textarea');
+          textArea.value = window.location.href;
+          textArea.style.position = 'fixed';
+          textArea.style.left = '-999999px';
+          textArea.style.top = '-999999px';
+          document.body.appendChild(textArea);
+          textArea.focus();
+          textArea.select();
+          try {
+            document.execCommand('copy');
+            toast.success('Link copied to clipboard!');
+          } catch (copyErr) {
+            toast.error('Failed to copy link');
+          }
+          document.body.removeChild(textArea);
+        }
+      }
+    } finally {
+      isShareInProgress.current = false;
+    }
+  };
 
   const handleAddClick = async (item, sectionTitle, event) => {
     try {
@@ -269,15 +321,7 @@ const ServiceDynamic = () => {
         title={service.title}
         onBack={handleBack}
         onSearch={() => setIsSearchOpen(true)}
-        onShare={() => {
-          if (navigator.share) {
-            navigator.share({
-              title: service.title,
-              text: service.page?.description || `Check out ${service.title} on Appzeto`,
-              url: window.location.href,
-            });
-          }
-        }}
+        onShare={handleShare}
         isVisible={showStickyHeader}
       />
       <StickySubHeading
@@ -297,6 +341,7 @@ const ServiceDynamic = () => {
           ]}
           onBack={handleBack}
           onSearch={() => setIsSearchOpen(true)}
+          onShare={handleShare}
           showStickyNav={showStickyHeader}
         />
 

@@ -259,7 +259,12 @@ const Login = () => {
               <div className="flex items-center justify-between text-sm animate-stagger-2 animate-fade-in">
                 <button
                   type="button"
-                  onClick={() => setStep('phone')}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setOtp(['', '', '', '', '', '']);
+                    setOtpToken('');
+                    setStep('phone');
+                  }}
                   className="flex items-center font-medium text-gray-600 hover:text-[#347989] transition-colors"
                 >
                   <FiChevronLeft className="mr-1" /> Change Number
@@ -319,4 +324,3 @@ const Login = () => {
 };
 
 export default Login;
-

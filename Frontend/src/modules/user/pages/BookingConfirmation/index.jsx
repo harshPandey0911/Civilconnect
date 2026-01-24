@@ -17,6 +17,7 @@ import {
   FiXCircle
 } from 'react-icons/fi';
 import { bookingService } from '../../../../services/bookingService';
+import NotificationBell from '../../components/common/NotificationBell';
 
 // Inline Searching Animation Component
 const SearchingAnimation = () => {
@@ -205,272 +206,288 @@ const BookingConfirmation = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      {/* Header with Back Button */}
-      <header className="bg-white/80 backdrop-blur-lg border-b border-slate-100 sticky top-0 z-30">
-        <div className="px-4 pt-4 pb-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => navigate(-1)}
-                className="p-2.5 hover:bg-slate-50 active:bg-slate-100 rounded-full transition-colors text-slate-700"
-              >
-                <FiArrowLeft className="w-5 h-5" />
-              </button>
-              <h1 className="text-xl font-bold text-slate-900 tracking-tight">Booking Confirmation</h1>
-            </div>
+    <div className="min-h-screen pb-20 relative bg-white">
+      {/* Refined Brand Mesh Gradient Background */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <div className="absolute inset-0"
+          style={{
+            background: `
+              radial-gradient(at 0% 0%, ${themeColors?.brand?.teal || '#347989'}25 0%, transparent 70%),
+              radial-gradient(at 100% 0%, ${themeColors?.brand?.yellow || '#D68F35'}20 0%, transparent 70%),
+              radial-gradient(at 100% 100%, ${themeColors?.brand?.orange || '#BB5F36'}15 0%, transparent 75%),
+              radial-gradient(at 0% 100%, ${themeColors?.brand?.teal || '#347989'}10 0%, transparent 70%),
+              radial-gradient(at 50% 50%, ${themeColors?.brand?.teal || '#347989'}03 0%, transparent 100%),
+              #FFFFFF
+            `
+          }}
+        />
+        {/* Elegant Dot Grid Pattern */}
+        <div className="absolute inset-0 opacity-[0.04]"
+          style={{
+            backgroundImage: `radial-gradient(${themeColors?.brand?.teal || '#347989'} 0.8px, transparent 0.8px)`,
+            backgroundSize: '32px 32px'
+          }}
+        />
+      </div>
+
+      <div className="relative z-10">
+        {/* Modern Glassmorphism Header */}
+        <header className="sticky top-0 z-40 backdrop-blur-xl bg-white/40 border-b border-black/[0.03] px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
             <button
-              onClick={() => navigate('/user/notifications')}
-              className="p-2 hover:bg-gray-50 rounded-full transition-colors"
+              onClick={() => navigate(-1)}
+              className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm border border-black/[0.02]"
             >
-              <FiBell className="w-6 h-6 text-gray-700" />
+              <FiArrowLeft className="w-5 h-5 text-gray-800" />
             </button>
+            <h1 className="text-xl font-extrabold text-gray-900 tracking-tight">Booking Sent</h1>
           </div>
-        </div>
-      </header>
+          <NotificationBell />
+        </header>
 
-      <main className="px-4 py-6">
-        {/* Searching Animation - Show at top when searching for vendor */}
-        {isSearching && (
-          <div className="bg-white rounded-2xl shadow-md border border-gray-100 mb-4 overflow-hidden">
-            <SearchingAnimation />
-          </div>
-        )}
-
-        {/* Success Icon - Show when confirmed */}
-        {!isSearching && ['confirmed', 'assigned', 'journey_started', 'work_in_progress', 'visited', 'work_done', 'completed'].includes(booking?.status?.toLowerCase()) && (
-          <div className="flex flex-col items-center justify-center mb-6">
-            <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mb-4">
-              <FiCheckCircle className="w-12 h-12 text-green-600" />
-            </div>
-            <h1 className="text-2xl font-bold text-black mb-2">Booking Confirmed!</h1>
-            <p className="text-sm text-gray-600 text-center">
-              Your booking has been confirmed. We'll send you updates via SMS.
-            </p>
-          </div>
-        )}
-
-        {/* Failure Icon - Show when expired/cancelled/rejected */}
-        {!isSearching && ['expired', 'cancelled', 'rejected', 'failed', 'timeout'].includes(booking?.status?.toLowerCase()) && (
-          <div className="flex flex-col items-center justify-center mb-6">
-            <div className="w-20 h-20 rounded-full bg-red-100 flex items-center justify-center mb-4">
-              <FiXCircle className="w-12 h-12 text-red-600" />
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">No Expert Found</h1>
-            <p className="text-sm text-gray-500 text-center max-w-[260px] mb-6">
-              We couldn't find a nearby expert for your request at this moment.
-            </p>
-            <button
-              onClick={() => navigate('/')}
-              className="px-8 py-3 bg-teal-600 text-white rounded-xl font-bold shadow-lg shadow-teal-600/20 active:scale-95 transition-all flex items-center gap-2"
-            >
-              <FiArrowRight className="w-5 h-5" />
-              Search Again
-            </button>
-          </div>
-        )}
-
-        {/* Booking ID Card */}
-        <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-4 mb-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-gray-500 mb-1">Booking ID</p>
-              <p className="text-base font-bold text-black">{booking.bookingNumber || booking._id || booking.id}</p>
-            </div>
-            <div className={`px-3 py-1.5 rounded-full ${isSearching ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' : 'bg-green-50 text-green-700 border border-green-200'}`}>
-              <span className="text-sm font-semibold">{isSearching ? 'Finding Vendor...' : 'Confirmed'}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Service Details Card */}
-        <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-4 mb-4">
-          <h3 className="text-base font-bold text-black mb-3">Service Details</h3>
-          <div className="space-y-3">
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: 'rgba(0, 166, 166, 0.1)' }}>
-                <FiMapPin className="w-4 h-4" style={{ color: themeColors.button }} />
-              </div>
-              <div className="flex-1">
-                <p className="text-xs text-gray-500 mb-1">Service Address</p>
-                <p className="text-sm text-gray-700">{getAddressString(booking.address)}</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: 'rgba(0, 166, 166, 0.1)' }}>
-                <FiCalendar className="w-4 h-4" style={{ color: themeColors.button }} />
-              </div>
-              <div className="flex-1">
-                <p className="text-xs text-gray-500 mb-1">Date & Time</p>
-                <p className="text-sm text-gray-700">
-                  {formatDate(booking.scheduledDate)} • {booking.scheduledTime || booking.timeSlot?.start || 'N/A'}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Service Summary Card */}
-        <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-4 mb-4">
-          <h3 className="text-base font-bold text-black mb-3">Service Booked</h3>
-          <div className="space-y-3">
-            {/* Main Service */}
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: 'rgba(0, 166, 166, 0.1)' }}>
-                <FiPackage className="w-5 h-5" style={{ color: themeColors.button }} />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-black">{booking.serviceName || 'Service'}</p>
-                <p className="text-xs text-gray-500">{booking.serviceCategory || 'General'}</p>
-              </div>
-            </div>
-
-            {/* Booked Items */}
-            {booking.bookedItems && booking.bookedItems.length > 0 ? (
-              <div className="space-y-3">
-                {booking.bookedItems.map((item, idx) => (
-                  <div key={idx} className="bg-gray-50 rounded-lg p-3">
-                    {item.sectionTitle && (
-                      <p className="text-xs text-gray-500 font-medium mb-2">{item.sectionTitle}</p>
-                    )}
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <p className="text-sm font-semibold text-gray-800">{item.card?.title || item.title}</p>
-                        {item.card?.subtitle && (
-                          <p className="text-xs text-gray-500 mt-0.5">{item.card.subtitle}</p>
-                        )}
-                        {item.card?.duration && (
-                          <p className="text-xs text-gray-400 mt-1">⏱ {item.card.duration}</p>
-                        )}
-                      </div>
-                      <p className="text-sm font-bold text-gray-800 ml-3">₹{(item.card?.price || 0).toLocaleString('en-IN')}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : booking.userNotes ? (
-              <div className="bg-gray-50 rounded-lg p-3 mt-2">
-                <p className="text-xs text-gray-500 mb-1">Specific Service</p>
-                <p className="text-sm font-medium text-gray-800">
-                  {booking.userNotes.replace('Items: ', '')}
-                </p>
-              </div>
-            ) : null}
-          </div>
-        </div>
-
-        {/* Payment Summary - Professional Card */}
-        <div className="bg-white border-2 border-slate-100 rounded-2xl p-5 mb-6 shadow-sm overflow-hidden relative">
-          <div className="absolute top-0 left-0 right-0 h-1" style={{ background: themeColors.gradient || themeColors.button }}></div>
-
-          <div className="flex items-center gap-2 mb-4">
-            <div className={`p-2 rounded-lg ${booking.paymentMethod === 'plan_benefit' ? 'bg-amber-100' : 'bg-slate-100'}`}>
-              {booking.paymentMethod === 'plan_benefit' ? (
-                <FiPackage className="w-5 h-5 text-amber-600" />
-              ) : (
-                <FiDollarSign className="w-5 h-5 text-slate-600" />
-              )}
-            </div>
-            <h3 className="text-lg font-bold text-slate-900">Payment Summary</h3>
-          </div>
-
-          <div className="space-y-3">
-            {/* Base Price */}
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-slate-600">Base Price</span>
-              {booking.paymentMethod === 'plan_benefit' ? (
-                <div className="flex items-center gap-2">
-                  <span className="line-through text-slate-400 text-xs">₹{(booking.basePrice || 0).toLocaleString('en-IN')}</span>
-                  <span className="text-emerald-600 font-bold text-xs bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">FREE ✓</span>
-                </div>
-              ) : (
-                <span className="font-medium text-slate-900">₹{(booking.basePrice || 0).toLocaleString('en-IN')}</span>
-              )}
-            </div>
-
-            {/* Discount */}
-            {booking.paymentMethod !== 'plan_benefit' && booking.discount > 0 && (
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-green-600 font-medium">Discount</span>
-                <span className="font-medium text-green-600">-₹{booking.discount.toLocaleString('en-IN')}</span>
-              </div>
-            )}
-
-            {/* Tax */}
-            {(booking.tax > 0 || booking.paymentMethod === 'plan_benefit') && (
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-slate-500">GST (18%)</span>
-                {booking.paymentMethod === 'plan_benefit' ? (
-                  <div className="flex items-center gap-2">
-                    <span className="line-through text-slate-400 text-xs">₹{(booking.tax || 0).toLocaleString('en-IN')}</span>
-                    <span className="text-emerald-600 font-bold text-xs bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">FREE ✓</span>
-                  </div>
-                ) : (
-                  <span className="font-medium text-slate-700">₹{(booking.tax || 0).toLocaleString('en-IN')}</span>
-                )}
-              </div>
-            )}
-
-            {/* Convenience Fee */}
-            {(booking.visitingCharges > 0 || booking.visitationFee > 0 || booking.paymentMethod === 'plan_benefit') && (
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-slate-500">Convenience Fee</span>
-                {booking.paymentMethod === 'plan_benefit' ? (
-                  <div className="flex items-center gap-2">
-                    <span className="line-through text-slate-400 text-xs">₹{(booking.visitingCharges || booking.visitationFee || 0).toLocaleString('en-IN')}</span>
-                    <span className="text-emerald-600 font-bold text-xs bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">FREE ✓</span>
-                  </div>
-                ) : (
-                  <span className="font-medium text-slate-700">₹{(booking.visitingCharges || booking.visitationFee || 0).toLocaleString('en-IN')}</span>
-                )}
-              </div>
-            )}
-
-            {/* Total */}
-            <div className="border-t border-slate-200 pt-4 mt-2">
-              <div className="flex justify-between items-center">
-                <span className="text-base font-bold text-slate-900">Total Paid</span>
-                <span className="text-xl font-black text-slate-900">
-                  ₹{(booking.paymentMethod === 'plan_benefit' ? 0 : (booking.finalAmount || booking.totalAmount || 0)).toLocaleString('en-IN')}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Payment Success Badge */}
-          {(booking.paymentId || booking.paymentMethod === 'plan_benefit') && (
-            <div className={`mt-4 pt-3 border-t border-dashed ${booking.paymentMethod === 'plan_benefit' ? 'border-amber-200' : 'border-slate-200'}`}>
-              <div className={`flex items-center gap-2 border rounded-lg p-3 ${booking.paymentMethod === 'plan_benefit' ? 'bg-amber-50 border-amber-100' : 'bg-green-50 border-green-200'}`}>
-                <FiCheckCircle className={`w-5 h-5 shrink-0 ${booking.paymentMethod === 'plan_benefit' ? 'text-amber-600' : 'text-green-600'}`} />
-                <div>
-                  <p className={`text-sm font-bold ${booking.paymentMethod === 'plan_benefit' ? 'text-amber-700' : 'text-green-700'}`}>
-                    {booking.paymentMethod === 'plan_benefit' ? 'Membership Benefit Applied' : 'Payment Successful'}
-                  </p>
-                  {booking.paymentId && <p className="text-xs text-green-600">ID: {booking.paymentId}</p>}
-                </div>
-              </div>
+        <main className="px-4 py-6">
+          {/* Searching Animation - Show at top when searching for vendor */}
+          {isSearching && (
+            <div className="bg-white rounded-2xl shadow-md border border-gray-100 mb-4 overflow-hidden">
+              <SearchingAnimation />
             </div>
           )}
-        </div>
 
-        {/* Action Buttons */}
-        <div className="space-y-3">
-          <button
-            onClick={handleViewDetails}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-lg text-base font-semibold text-white transition-all"
-            style={{ backgroundColor: themeColors.button }}
-          >
-            View Full Details
-            <FiArrowRight className="w-5 h-5" />
-          </button>
-          <button
-            onClick={handleGoHome}
-            className="w-full py-3 rounded-lg text-base font-semibold bg-white border-2 border-gray-300 text-gray-700 hover:bg-gray-50 transition-all"
-          >
-            Back to Home
-          </button>
-        </div>
-      </main>
+          {/* Success Icon - Show when confirmed */}
+          {!isSearching && ['confirmed', 'assigned', 'journey_started', 'work_in_progress', 'visited', 'work_done', 'completed'].includes(booking?.status?.toLowerCase()) && (
+            <div className="flex flex-col items-center justify-center mb-6">
+              <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mb-4">
+                <FiCheckCircle className="w-12 h-12 text-green-600" />
+              </div>
+              <h1 className="text-2xl font-bold text-black mb-2">Booking Confirmed!</h1>
+              <p className="text-sm text-gray-600 text-center">
+                Your booking has been confirmed. We'll send you updates via SMS.
+              </p>
+            </div>
+          )}
+
+          {/* Failure Icon - Show when expired/cancelled/rejected */}
+          {!isSearching && ['expired', 'cancelled', 'rejected', 'failed', 'timeout'].includes(booking?.status?.toLowerCase()) && (
+            <div className="flex flex-col items-center justify-center mb-6">
+              <div className="w-20 h-20 rounded-full bg-red-100 flex items-center justify-center mb-4">
+                <FiXCircle className="w-12 h-12 text-red-600" />
+              </div>
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">No Expert Found</h1>
+              <p className="text-sm text-gray-500 text-center max-w-[260px] mb-6">
+                We couldn't find a nearby expert for your request at this moment.
+              </p>
+              <button
+                onClick={() => navigate('/')}
+                className="px-8 py-3 bg-teal-600 text-white rounded-xl font-bold shadow-lg shadow-teal-600/20 active:scale-95 transition-all flex items-center gap-2"
+              >
+                <FiArrowRight className="w-5 h-5" />
+                Search Again
+              </button>
+            </div>
+          )}
+
+          {/* Booking ID Card */}
+          <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-4 mb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-500 mb-1">Booking ID</p>
+                <p className="text-base font-bold text-black">{booking.bookingNumber || booking._id || booking.id}</p>
+              </div>
+              <div className={`px-3 py-1.5 rounded-full ${isSearching ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' : 'bg-green-50 text-green-700 border border-green-200'}`}>
+                <span className="text-sm font-semibold">{isSearching ? 'Finding Vendor...' : 'Confirmed'}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Service Details Card */}
+          <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-4 mb-4">
+            <h3 className="text-base font-bold text-black mb-3">Service Details</h3>
+            <div className="space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: 'rgba(0, 166, 166, 0.1)' }}>
+                  <FiMapPin className="w-4 h-4" style={{ color: themeColors.button }} />
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs text-gray-500 mb-1">Service Address</p>
+                  <p className="text-sm text-gray-700">{getAddressString(booking.address)}</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: 'rgba(0, 166, 166, 0.1)' }}>
+                  <FiCalendar className="w-4 h-4" style={{ color: themeColors.button }} />
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs text-gray-500 mb-1">Date & Time</p>
+                  <p className="text-sm text-gray-700">
+                    {formatDate(booking.scheduledDate)} • {booking.scheduledTime || booking.timeSlot?.start || 'N/A'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Service Summary Card */}
+          <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-4 mb-4">
+            <h3 className="text-base font-bold text-black mb-3">Service Booked</h3>
+            <div className="space-y-3">
+              {/* Main Service */}
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: 'rgba(0, 166, 166, 0.1)' }}>
+                  <FiPackage className="w-5 h-5" style={{ color: themeColors.button }} />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-black">{booking.serviceName || 'Service'}</p>
+                  <p className="text-xs text-gray-500">{booking.serviceCategory || 'General'}</p>
+                </div>
+              </div>
+
+              {/* Booked Items */}
+              {booking.bookedItems && booking.bookedItems.length > 0 ? (
+                <div className="space-y-3">
+                  {booking.bookedItems.map((item, idx) => (
+                    <div key={idx} className="bg-gray-50 rounded-lg p-3">
+                      {item.sectionTitle && (
+                        <p className="text-xs text-gray-500 font-medium mb-2">{item.sectionTitle}</p>
+                      )}
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold text-gray-800">{item.card?.title || item.title}</p>
+                          {item.card?.subtitle && (
+                            <p className="text-xs text-gray-500 mt-0.5">{item.card.subtitle}</p>
+                          )}
+                          {item.card?.duration && (
+                            <p className="text-xs text-gray-400 mt-1">⏱ {item.card.duration}</p>
+                          )}
+                        </div>
+                        <p className="text-sm font-bold text-gray-800 ml-3">₹{(item.card?.price || 0).toLocaleString('en-IN')}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : booking.userNotes ? (
+                <div className="bg-gray-50 rounded-lg p-3 mt-2">
+                  <p className="text-xs text-gray-500 mb-1">Specific Service</p>
+                  <p className="text-sm font-medium text-gray-800">
+                    {booking.userNotes.replace('Items: ', '')}
+                  </p>
+                </div>
+              ) : null}
+            </div>
+          </div>
+
+          {/* Payment Summary - Professional Card */}
+          <div className="bg-white border-2 border-slate-100 rounded-2xl p-5 mb-6 shadow-sm overflow-hidden relative">
+            <div className="absolute top-0 left-0 right-0 h-1" style={{ background: themeColors.gradient || themeColors.button }}></div>
+
+            <div className="flex items-center gap-2 mb-4">
+              <div className={`p-2 rounded-lg ${booking.paymentMethod === 'plan_benefit' ? 'bg-amber-100' : 'bg-slate-100'}`}>
+                {booking.paymentMethod === 'plan_benefit' ? (
+                  <FiPackage className="w-5 h-5 text-amber-600" />
+                ) : (
+                  <FiDollarSign className="w-5 h-5 text-slate-600" />
+                )}
+              </div>
+              <h3 className="text-lg font-bold text-slate-900">Payment Summary</h3>
+            </div>
+
+            <div className="space-y-3">
+              {/* Base Price */}
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-slate-600">Base Price</span>
+                {booking.paymentMethod === 'plan_benefit' ? (
+                  <div className="flex items-center gap-2">
+                    <span className="line-through text-slate-400 text-xs">₹{(booking.basePrice || 0).toLocaleString('en-IN')}</span>
+                    <span className="text-emerald-600 font-bold text-xs bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">FREE ✓</span>
+                  </div>
+                ) : (
+                  <span className="font-medium text-slate-900">₹{(booking.basePrice || 0).toLocaleString('en-IN')}</span>
+                )}
+              </div>
+
+              {/* Discount */}
+              {booking.paymentMethod !== 'plan_benefit' && booking.discount > 0 && (
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-green-600 font-medium">Discount</span>
+                  <span className="font-medium text-green-600">-₹{booking.discount.toLocaleString('en-IN')}</span>
+                </div>
+              )}
+
+              {/* Tax */}
+              {(booking.tax > 0 || booking.paymentMethod === 'plan_benefit') && (
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-slate-500">GST (18%)</span>
+                  {booking.paymentMethod === 'plan_benefit' ? (
+                    <div className="flex items-center gap-2">
+                      <span className="line-through text-slate-400 text-xs">₹{(booking.tax || 0).toLocaleString('en-IN')}</span>
+                      <span className="text-emerald-600 font-bold text-xs bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">FREE ✓</span>
+                    </div>
+                  ) : (
+                    <span className="font-medium text-slate-700">₹{(booking.tax || 0).toLocaleString('en-IN')}</span>
+                  )}
+                </div>
+              )}
+
+              {/* Convenience Fee */}
+              {(booking.visitingCharges > 0 || booking.visitationFee > 0 || booking.paymentMethod === 'plan_benefit') && (
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-slate-500">Convenience Fee</span>
+                  {booking.paymentMethod === 'plan_benefit' ? (
+                    <div className="flex items-center gap-2">
+                      <span className="line-through text-slate-400 text-xs">₹{(booking.visitingCharges || booking.visitationFee || 0).toLocaleString('en-IN')}</span>
+                      <span className="text-emerald-600 font-bold text-xs bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">FREE ✓</span>
+                    </div>
+                  ) : (
+                    <span className="font-medium text-slate-700">₹{(booking.visitingCharges || booking.visitationFee || 0).toLocaleString('en-IN')}</span>
+                  )}
+                </div>
+              )}
+
+              {/* Total */}
+              <div className="border-t border-slate-200 pt-4 mt-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-base font-bold text-slate-900">Total Paid</span>
+                  <span className="text-xl font-black text-slate-900">
+                    ₹{(booking.paymentMethod === 'plan_benefit' ? 0 : (booking.finalAmount || booking.totalAmount || 0)).toLocaleString('en-IN')}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Payment Success Badge */}
+            {(booking.paymentId || booking.paymentMethod === 'plan_benefit') && (
+              <div className={`mt-4 pt-3 border-t border-dashed ${booking.paymentMethod === 'plan_benefit' ? 'border-amber-200' : 'border-slate-200'}`}>
+                <div className={`flex items-center gap-2 border rounded-lg p-3 ${booking.paymentMethod === 'plan_benefit' ? 'bg-amber-50 border-amber-100' : 'bg-green-50 border-green-200'}`}>
+                  <FiCheckCircle className={`w-5 h-5 shrink-0 ${booking.paymentMethod === 'plan_benefit' ? 'text-amber-600' : 'text-green-600'}`} />
+                  <div>
+                    <p className={`text-sm font-bold ${booking.paymentMethod === 'plan_benefit' ? 'text-amber-700' : 'text-green-700'}`}>
+                      {booking.paymentMethod === 'plan_benefit' ? 'Membership Benefit Applied' : 'Payment Successful'}
+                    </p>
+                    {booking.paymentId && <p className="text-xs text-green-600">ID: {booking.paymentId}</p>}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Action Buttons */}
+          <div className="space-y-3">
+            <button
+              onClick={handleViewDetails}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-lg text-base font-semibold text-white transition-all"
+              style={{ backgroundColor: themeColors.button }}
+            >
+              View Full Details
+              <FiArrowRight className="w-5 h-5" />
+            </button>
+            <button
+              onClick={handleGoHome}
+              className="w-full py-3 rounded-lg text-base font-semibold bg-white border-2 border-gray-300 text-gray-700 hover:bg-gray-50 transition-all"
+            >
+              Back to Home
+            </button>
+          </div>
+        </main>
+      </div>
     </div>
   );
 };

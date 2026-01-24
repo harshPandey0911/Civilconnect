@@ -12,7 +12,7 @@ const NotificationBell = ({ notificationCount = 0 }) => {
   return (
     <div
       ref={bellButtonRef}
-      className="relative rounded-full cursor-pointer group active:scale-95 transition-transform duration-300 z-50"
+      className="relative rounded-full cursor-pointer group active:scale-95 transition-transform duration-300 z-50 shrink-0"
       style={{
         width: '42px',
         height: '42px',
@@ -58,12 +58,11 @@ const NotificationBell = ({ notificationCount = 0 }) => {
         }
       }}
     >
-      {/* 1. Animated Running Border */}
+      {/* 1. Gradient Border */}
       <div
         className="absolute inset-[-2px] rounded-full z-0"
         style={{
           background: themeColors.brand.conic,
-          animation: 'spin 2s linear infinite',
           boxShadow: `0 0 8px ${themeColors.brand.orange}26`
         }}
       />

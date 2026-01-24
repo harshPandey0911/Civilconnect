@@ -1,35 +1,36 @@
 import React, { useEffect, useState, cloneElement } from 'react';
 import { useLocation } from 'react-router-dom';
 
+/**
+ * PageTransition - Provides smooth page transitions without blocking navigation
+ * Uses simple opacity fade for fast, non-intrusive page changes
+ */
 const PageTransition = ({ children }) => {
   const location = useLocation();
   const [displayLocation, setDisplayLocation] = useState(location);
-  const [transitionStage, setTransitionStage] = useState('entering');
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   useEffect(() => {
     if (location.pathname !== displayLocation.pathname) {
-      setTransitionStage('exiting');
+      // Start transition immediately
+      setIsTransitioning(true);
+
+      // Quick fade out then swap content
+      const timeout = setTimeout(() => {
+        setDisplayLocation(location);
+        setIsTransitioning(false);
+      }, 100); // Very quick transition (100ms)
+
+      return () => clearTimeout(timeout);
     }
   }, [location.pathname, displayLocation.pathname]);
 
-  useEffect(() => {
-    if (transitionStage === 'exiting') {
-      // Instant transition - no delay for super fast navigation
-      setDisplayLocation(location);
-      setTransitionStage('entering');
-    }
-  }, [transitionStage, location]);
-
   return (
     <div
-      className={`min-h-screen ${transitionStage === 'entering'
-        ? 'animate-page-enter'
-        : 'animate-page-exit'
-        }`}
       style={{
-        animationFillMode: 'both',
-        // Removed position: 'relative' to allow fixed elements to work correctly
-        // Removed isolation: 'isolate' for better performance
+        opacity: isTransitioning ? 0.7 : 1,
+        transition: 'opacity 100ms ease-out',
+        willChange: 'opacity',
       }}
     >
       {cloneElement(children, { location: displayLocation })}
@@ -38,4 +39,5 @@ const PageTransition = ({ children }) => {
 };
 
 export default PageTransition;
+
 
