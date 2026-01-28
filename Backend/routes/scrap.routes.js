@@ -17,14 +17,13 @@ const {
 router.post('/', authenticate, isUser, createScrap);
 router.get('/my', authenticate, isUser, getMyScrap);
 
-// Vendor Routes
-router.get('/available', authenticate, isVendor, getAvailableScrap);
-router.get('/my-accepted', authenticate, isVendor, getMyAcceptedScrap);
-router.put('/:id/accept', authenticate, isVendor, acceptScrap);
-router.put('/:id/complete', authenticate, isVendor, completeScrap);
-router.get('/:id', authenticate, getScrapById);
-
+// Vendor/Admin Actions
+router.put('/:id/accept', authenticate, isAdmin, acceptScrap);
+router.put('/:id/complete', authenticate, isAdmin, completeScrap);
 // Admin Routes
 router.get('/all', authenticate, isAdmin, getAllScrapAdmin);
+
+// Shared/Specific ID Route
+router.get('/:id', authenticate, getScrapById);
 
 module.exports = router;

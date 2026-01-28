@@ -22,7 +22,6 @@ const Profile = () => {
 
   const menuItems = [
     { id: 2, label: 'Wallet', icon: FaWallet, path: '/vendor/wallet' },
-    { id: 3, label: 'Buy Scrap', icon: FiTrash2, path: '/vendor/scrap' },
     { id: 5, label: 'My Ratings', icon: FiStar, path: '/vendor/my-ratings' },
     { id: 6, label: 'Manage Payment Methods', icon: FiCreditCard, path: '/vendor/manage-payment-methods' },
     { id: 7, label: 'Manage Address', icon: FiMapPin, path: '/vendor/address-management' },
