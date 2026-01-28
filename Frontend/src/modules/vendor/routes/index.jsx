@@ -131,7 +131,7 @@ const VendorRoutes = () => {
       {shouldShowBottomNav && <BottomNav />}
 
       {/* Global Alert for Cash Limit */}
-      <CashLimitModal />
+      {!shouldHideBottomNav && <CashLimitModal />}
     </ErrorBoundary>
   );
 };

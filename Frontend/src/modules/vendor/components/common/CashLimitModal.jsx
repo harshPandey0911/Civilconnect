@@ -11,12 +11,17 @@ const CashLimitModal = () => {
 
   const checkLimit = async () => {
     try {
+      // Check if user is logged in before making the call
+      const token = sessionStorage.getItem('vendorAccessToken') || localStorage.getItem('vendorAccessToken');
+      if (!token) return;
+
       const wallet = await getWalletBalance();
       if (wallet) {
         setWalletData(wallet);
       }
     } catch (error) {
       // Silent fail
+      console.warn('CashLimitModal: Failed to fetch wallet balance', error.message);
     }
   };
 
