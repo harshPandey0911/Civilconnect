@@ -92,7 +92,7 @@ app.use('/api', rateLimiter);
 app.get('/health', (req, res) => {
   res.json({
     success: true,
-    message: 'Appzeto API is running',
+    message: 'Homster API is running',
     timestamp: new Date().toISOString()
   });
 });
