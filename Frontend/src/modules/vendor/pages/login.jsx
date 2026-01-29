@@ -6,6 +6,13 @@ import { themeColors } from '../../../theme';
 import { sendOTP, verifyLogin } from '../services/authService';
 import Logo from '../../../components/common/Logo';
 
+import { z } from "zod";
+
+// Zod schema
+const phoneSchema = z.object({
+  phone: z.string().regex(/^[6-9]\d{9}$/, "Please enter a valid 10-digit Indian phone number"),
+});
+
 const VendorLogin = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState('phone'); // 'phone' or 'otp'
@@ -47,11 +54,15 @@ const VendorLogin = () => {
 
   const handlePhoneSubmit = async (e) => {
     e.preventDefault();
-    const cleanPhone = phoneNumber.replace(/\D/g, '');
-    if (!cleanPhone || cleanPhone.length < 10) {
-      toast.error('Please enter a valid phone number');
+
+    // Zod Validation
+    const validationResult = phoneSchema.safeParse({ phone: phoneNumber });
+    if (!validationResult.success) {
+      toast.error(validationResult.error.errors[0].message);
       return;
     }
+
+    const cleanPhone = phoneNumber.replace(/\D/g, '');
     setIsLoading(true);
     try {
       const response = await sendOTP(cleanPhone);

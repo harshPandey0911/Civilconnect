@@ -5,6 +5,14 @@ import { toast } from 'react-hot-toast';
 import { themeColors } from '../../../../theme';
 import { userAuthService } from '../../../../services/authService';
 
+import { z } from "zod";
+
+// Zod schema
+const profileSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Please enter a valid email address").refine(val => val.includes('@'), "Invalid email address"),
+});
+
 const UpdateProfile = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -128,14 +136,14 @@ const UpdateProfile = () => {
   };
 
   const handleSave = async () => {
-    // Validation
-    if (!formData.name || formData.name.trim().length < 2) {
-      toast.error('Please enter a valid name (at least 2 characters)');
-      return;
-    }
+    // Zod Validation
+    const validationResult = profileSchema.safeParse({
+      name: formData.name.trim(),
+      email: formData.email.trim()
+    });
 
-    if (formData.email && !formData.email.includes('@')) {
-      toast.error('Please enter a valid email address');
+    if (!validationResult.success) {
+      toast.error(validationResult.error.errors[0].message);
       return;
     }
 

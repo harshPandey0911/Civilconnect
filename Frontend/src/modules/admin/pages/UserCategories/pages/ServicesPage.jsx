@@ -5,6 +5,15 @@ import CardShell from "../components/CardShell";
 import Modal from "../components/Modal";
 import { ensureIds, saveCatalog, slugify, toAssetUrl } from "../utils";
 import { serviceService, categoryService } from "../../../../../services/catalogService";
+import { z } from "zod";
+
+// Zod schema for Service Form
+const serviceSchema = z.object({
+  title: z.string().min(2, "Service title must be at least 2 characters"),
+  categoryIds: z.array(z.string()).min(1, "Select at least one category"),
+  iconUrl: z.string().optional(),
+  badge: z.string().optional(),
+});
 
 const ServicesPage = ({ catalog, setCatalog, selectedCity }) => {
   const [loading, setLoading] = useState(false);
@@ -265,20 +274,22 @@ const ServicesPage = ({ catalog, setCatalog, selectedCity }) => {
   };
 
   const upsert = async () => {
-    const title = form.title.trim();
-    if (!title) {
-      toast.error("Service title required");
-      return;
-    }
-    if (form.categoryIds.length === 0) {
-      toast.error("Select at least one category");
+    // Validate with Zod
+    const validationResult = serviceSchema.safeParse({
+      title: form.title.trim(),
+      categoryIds: form.categoryIds,
+      iconUrl: form.iconUrl.trim(),
+      badge: form.badge.trim(),
+    });
+
+    if (!validationResult.success) {
+      const firstError = validationResult.error.errors[0];
+      toast.error(firstError.message);
       return;
     }
 
+    const { title, categoryIds, iconUrl, badge } = validationResult.data;
     const slug = slugify(title);
-    const iconUrl = form.iconUrl.trim();
-    const badge = form.badge.trim();
-    const categoryIds = form.categoryIds;
 
     try {
       setLoading(true);

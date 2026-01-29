@@ -7,6 +7,22 @@ import BottomNav from '../../components/layout/BottomNav';
 import { publicCatalogService } from '../../../../services/catalogService';
 import { vendorAuthService } from '../../../../services/authService';
 import AddressSelectionModal from '../../../user/pages/Checkout/components/AddressSelectionModal';
+import { toast } from 'react-hot-toast';
+import { z } from "zod";
+
+// Zod schema
+const vendorProfileSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  businessName: z.string().min(2, "Business Name is required"),
+  phone: z.string().regex(/^\+?[0-9]{10,13}$/, "Invalid phone number"),
+  email: z.string().email("Invalid email address"),
+  address: z.custom((val) => {
+    return (typeof val === 'string' && val.trim().length > 0) ||
+      (typeof val === 'object' && val !== null && (val.fullAddress || val.addressLine1));
+  }, "Address is required"),
+  serviceCategories: z.array(z.string()).min(1, "Select at least one category"),
+  skills: z.array(z.string()).min(1, "Select at least one skill"),
+});
 
 const EditProfile = () => {
   const navigate = useNavigate();
@@ -265,51 +281,34 @@ const EditProfile = () => {
       return { ...prev, skills };
     });
   };
-  const validate = () => {
-    const newErrors = {};
-
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
-    }
-
-    if (!formData.businessName.trim()) {
-      newErrors.businessName = 'Business name is required';
-    }
-
-    if (!formData.phone.trim()) {
-      newErrors.phone = 'Phone number is required';
-    } else if (!/^\+?[0-9]{10,13}$/.test(formData.phone.replace(/[\s-]/g, ''))) {
-      newErrors.phone = 'Invalid phone number';
-    }
-
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Invalid email address';
-    }
-
-    const addr = formData.address;
-    const hasAddress = (typeof addr === 'string' && addr.trim()) ||
-      (typeof addr === 'object' && addr !== null && (addr.fullAddress || addr.addressLine1));
-
-    if (!hasAddress) {
-      newErrors.address = 'Address is required';
-    }
-
-    if (!formData.serviceCategories || formData.serviceCategories.length === 0) {
-      newErrors.serviceCategories = 'At least one service category is required';
-    }
-
-    if (!formData.skills || formData.skills.length === 0) {
-      newErrors.skills = 'At least one skill is required';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
 
   const handleSubmit = async () => {
-    if (!validate()) return;
+    // Zod Validation
+    const validationResult = vendorProfileSchema.safeParse({
+      name: formData.name,
+      businessName: formData.businessName,
+      phone: formData.phone,
+      email: formData.email,
+      address: formData.address,
+      serviceCategories: formData.serviceCategories,
+      skills: formData.skills
+    });
+
+    if (!validationResult.success) {
+      toast.error(validationResult.error.errors[0].message);
+      return;
+    }
+
+    // Manual Check for Aadhar (if strictly required)
+    // if (!formData.aadharDocument && !aadharFile) { toast.error("Aadhar document is required"); return; }
+
+    if (!validationResult.success) {
+      toast.error(validationResult.error.errors[0].message);
+      return;
+    }
+
+    // Manual Check for Aadhar (if strictly required)
+    // if (!formData.aadharDocument && !aadharFile) { toast.error("Aadhar document is required"); return; }
 
     try {
       setUploading(true);

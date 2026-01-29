@@ -7,6 +7,15 @@ import { userAuthService } from '../../../services/authService';
 import Logo from '../../../components/common/Logo';
 import LogoLoader from '../../../components/common/LogoLoader';
 
+import { z } from "zod";
+
+// Zod schema
+const signupSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters").regex(/^[a-zA-Z\s]+$/, "Name can only contain letters"),
+  email: z.string().optional().refine(val => !val || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val), "Invalid email address"),
+  phoneNumber: z.string().regex(/^[6-9]\d{9}$/, "Please enter a valid 10-digit Indian phone number"),
+});
+
 const Signup = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -62,47 +71,14 @@ const Signup = () => {
     }));
   };
 
-  // Validation helpers
-  const validateName = (name) => {
-    if (!name || !name.trim()) return 'Name is required';
-    if (name.trim().length < 2) return 'Name must be at least 2 characters';
-    if (!/^[a-zA-Z\s]+$/.test(name.trim())) return 'Name can only contain letters and spaces';
-    return null;
-  };
-
-  const validateEmail = (email) => {
-    if (!email) return null; // Email is optional
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) return 'Please enter a valid email address';
-    return null;
-  };
-
-  const validatePhone = (phone) => {
-    if (!phone) return 'Phone number is required';
-    if (phone.length !== 10) return 'Phone number must be exactly 10 digits';
-    if (!/^[6-9]\d{9}$/.test(phone)) return 'Please enter a valid Indian phone number';
-    return null;
-  };
-
-  const validateForm = () => {
-    const errors = [];
-    const nameError = validateName(formData.name);
-    const emailError = validateEmail(formData.email);
-    const phoneError = validatePhone(formData.phoneNumber);
-
-    if (nameError) errors.push(nameError);
-    if (emailError) errors.push(emailError);
-    if (phoneError) errors.push(phoneError);
-
-    return errors;
-  };
-
   const handleDetailsSubmit = async (e) => {
     e.preventDefault();
 
-    const errors = validateForm();
-    if (errors.length > 0) {
-      errors.forEach(err => toast.error(err));
+    // Zod Validation
+    const validationResult = signupSchema.safeParse(formData);
+
+    if (!validationResult.success) {
+      validationResult.error.errors.forEach(err => toast.error(err.message));
       return;
     }
 

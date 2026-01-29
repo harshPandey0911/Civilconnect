@@ -7,6 +7,17 @@ import ModeSelector from "../components/ModeSelector";
 import { ensureIds, saveCatalog, slugify, toAssetUrl } from "../utils";
 
 import { categoryService, serviceService } from "../../../../../services/catalogService";
+import { z } from "zod";
+
+// Define Zod schema
+const categorySchema = z.object({
+  title: z.string().min(2, "Category title must be at least 2 characters"),
+  slug: z.string().optional(),
+  homeIconUrl: z.string().optional(),
+  homeBadge: z.string().optional(),
+  hasSaleBadge: z.boolean(),
+  showOnHome: z.boolean(),
+});
 
 const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
   const [editingId, setEditingId] = useState(null);
@@ -107,18 +118,27 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
     setIsModalOpen(false);
   };
 
+
+
   const upsert = async () => {
-    const title = form.title.trim();
-    if (!title) {
-      toast.error("Category title required");
+    // Validate form with Zod
+    const validationResult = categorySchema.safeParse({
+      title: form.title.trim(),
+      slug: slugify(form.title.trim()), // derived
+      homeIconUrl: form.homeIconUrl.trim(),
+      homeBadge: form.homeBadge.trim(),
+      hasSaleBadge: Boolean(form.hasSaleBadge),
+      showOnHome: Boolean(form.showOnHome)
+    });
+
+    if (!validationResult.success) {
+      // Show first error in toast
+      const firstError = validationResult.error.errors[0];
+      toast.error(firstError.message);
       return;
     }
 
-    const slug = slugify(title).trim();
-    const homeIconUrl = form.homeIconUrl.trim();
-    const homeBadge = form.homeBadge.trim();
-    const hasSaleBadge = Boolean(form.hasSaleBadge);
-    const showOnHome = Boolean(form.showOnHome);
+    const { title, slug, homeIconUrl, homeBadge, hasSaleBadge, showOnHome } = validationResult.data;
 
     try {
       setLoading(true);

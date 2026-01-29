@@ -8,6 +8,27 @@ import BottomNav from '../../components/layout/BottomNav';
 import { createWorker, updateWorker, getWorkerById, linkWorker } from '../../services/workerService';
 import { publicCatalogService } from '../../../../services/catalogService';
 import { toast } from 'react-hot-toast';
+import { z } from "zod";
+
+// Zod schemas
+const addWorkerSchema = z.object({
+  name: z.string().min(2, "Name is required"),
+  phone: z.string().regex(/^\d{10}$/, "Enter valid 10-digit phone number"),
+  serviceCategories: z.array(z.string()).min(1, "Select at least one category"),
+  skills: z.array(z.string()).min(1, "Select at least one skill"),
+  aadhar: z.object({
+    number: z.string().regex(/^\d{12}$/, "Aadhar must be 12 digits"),
+    // document: z.any() 
+  }),
+  // address: z.any().optional() // Make address optional or strict as needed
+});
+
+const editWorkerSchema = z.object({
+  name: z.string().min(2, "Name is required"),
+  phone: z.string().regex(/^\d{10}$/, "Enter valid 10-digit phone number"),
+  serviceCategories: z.array(z.string()).min(1, "Select at least one category"),
+  skills: z.array(z.string()).min(1, "Select at least one skill"),
+});
 
 const AddEditWorker = () => {
   const { id } = useParams();
@@ -238,27 +259,30 @@ const AddEditWorker = () => {
     });
   };
 
-  // Simplified Validation
-  const validate = () => {
-    const errs = {};
-    if (!formData.name.trim()) errs.name = 'Required';
-    if (!formData.phone.trim()) errs.phone = 'Required';
-    // if (!formData.email.trim()) errs.email = 'Required';
-    if (!isEdit) {
-      // Only validate aadhar for new add, or if desired for updates
-      if (!formData.aadhar.number) errs['aadhar.number'] = 'Required';
-      if (!formData.aadhar.document && !aadharFile) errs['aadhar.document'] = 'Required';
-    }
-    if (formData.serviceCategories.length === 0) errs.serviceCategories = 'Required';
-    if (formData.skills.length === 0) errs.skills = 'Select at least one';
-
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
-  };
 
   const handleSubmit = async () => {
-    if (!validate()) {
-      toast.error('Please fill required fields');
+    // Zod Validation depending on mode
+    const schema = isEdit ? editWorkerSchema : addWorkerSchema;
+
+    // Construct validation object
+    const validationData = {
+      name: formData.name,
+      phone: formData.phone,
+      serviceCategories: formData.serviceCategories,
+      skills: formData.skills,
+      ...(isEdit ? {} : { aadhar: { number: formData.aadhar.number } })
+    };
+
+    const validationResult = schema.safeParse(validationData);
+
+    if (!validationResult.success) {
+      toast.error(validationResult.error.errors[0].message);
+      return;
+    }
+
+    // Additional manual check for Aadhar doc on 'new'
+    if (!isEdit && !formData.aadhar.document && !aadharFile) {
+      toast.error("Aadhar document is required");
       return;
     }
 

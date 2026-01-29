@@ -7,6 +7,13 @@ import { userAuthService } from '../../../services/authService';
 import Logo from '../../../components/common/Logo';
 import LogoLoader from '../../../components/common/LogoLoader';
 
+import { z } from "zod";
+
+// Zod schema
+const phoneSchema = z.object({
+  phone: z.string().regex(/^[6-9]\d{9}$/, "Please enter a valid 10-digit Indian phone number"),
+});
+
 const Login = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState('phone'); // 'phone' or 'otp'
@@ -48,10 +55,14 @@ const Login = () => {
 
   const handlePhoneSubmit = async (e) => {
     e.preventDefault();
-    if (!phoneNumber || phoneNumber.length < 10) {
-      toast.error('Please enter a valid phone number');
+
+    // Zod Validation
+    const validationResult = phoneSchema.safeParse({ phone: phoneNumber });
+    if (!validationResult.success) {
+      toast.error(validationResult.error.errors[0].message);
       return;
     }
+
     setIsLoading(true);
     try {
       // Clean phone number

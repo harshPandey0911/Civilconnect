@@ -5,6 +5,17 @@ import { FiArrowLeft, FiPlus, FiMoreVertical, FiEdit2, FiTrash2, FiMapPin, FiNav
 import AddressSelectionModal from '../Checkout/components/AddressSelectionModal';
 import { userAuthService } from '../../../../services/authService';
 
+import { z } from "zod";
+
+// Zod schema for Address validation
+const addressSchema = z.object({
+  addressLine1: z.string().min(5, "Address location is too short"),
+  addressLine2: z.string().optional(), // House Number
+  city: z.string().min(2, "City name is required"),
+  state: z.string().min(2, "State is required"),
+  pincode: z.string().regex(/^\d{6}$/, "Invalid Pincode format"),
+});
+
 const ManageAddresses = () => {
   const navigate = useNavigate();
   const [addresses, setAddresses] = useState([]); // Stores Red raw DB address objects
@@ -70,13 +81,24 @@ const ManageAddresses = () => {
       const state = getComponent(components, 'administrative_area_level_1') || '';
       const pincode = getComponent(components, 'postal_code') || '';
 
-      const newAddress = {
-        type: 'home', // Default type
+      // Zod Validation Preparation
+      const addressData = {
         addressLine1: locationObj.address,
         addressLine2: savedHouseNumber,
         city,
         state,
-        pincode,
+        pincode
+      };
+
+      const validationResult = addressSchema.safeParse(addressData);
+      if (!validationResult.success) {
+        toast.error(validationResult.error.errors[0].message);
+        return;
+      }
+
+      const newAddress = {
+        type: 'home', // Default type
+        ...addressData,
         lat: locationObj.lat,
         lng: locationObj.lng,
         isDefault: addresses.length === 0 // Make first address default

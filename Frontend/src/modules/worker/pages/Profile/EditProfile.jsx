@@ -11,6 +11,25 @@ import workerService from '../../../../services/workerService';
 import { publicCatalogService } from '../../../../services/catalogService';
 import { toast } from 'react-hot-toast';
 import AddressSelectionModal from '../../../user/pages/Checkout/components/AddressSelectionModal';
+import { z } from "zod";
+
+// Zod schema
+const workerProfileSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  phone: z.string().optional(), // Read-only but good to have in schema
+  email: z.string().email("Invalid email address").optional().or(z.literal('')),
+  serviceCategories: z.array(z.string()).min(1, "Select at least one category"),
+  skills: z.array(z.string()).min(1, "Select at least one skill"),
+  address: z.object({
+    addressLine1: z.string().optional(),
+    city: z.string().optional(),
+    state: z.string().optional(),
+    pincode: z.string().optional(),
+    fullAddress: z.string().optional()
+  }).refine((data) => {
+    return (data.fullAddress && data.fullAddress.length > 5) || (data.addressLine1 && data.addressLine1.length > 0);
+  }, { message: "Address is required" })
+});
 
 const EditProfile = () => {
   const navigate = useNavigate();
@@ -182,18 +201,22 @@ const EditProfile = () => {
     setIsAddressModalOpen(false);
   };
 
-  const validate = () => {
-    const errs = {};
-    if (!formData.name.trim()) errs.name = 'Name is required';
-    if (!formData.serviceCategories || formData.serviceCategories.length === 0) errs.serviceCategories = 'At least one category is required';
-    if (!formData.skills || formData.skills.length === 0) errs.skills = 'At least one service is required';
-
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
-  };
-
   const handleSubmit = async () => {
-    if (!validate()) return;
+    // Zod Validation
+    const validationResult = workerProfileSchema.safeParse({
+      name: formData.name,
+      phone: formData.phone,
+      email: formData.email,
+      serviceCategories: formData.serviceCategories,
+      skills: formData.skills,
+      address: formData.address
+    });
+
+    if (!validationResult.success) {
+      toast.error(validationResult.error.errors[0].message);
+      return;
+    }
+
     try {
       setSaving(true);
 
@@ -201,7 +224,7 @@ const EditProfile = () => {
         name: formData.name,
         email: formData.email,
         serviceCategories: formData.serviceCategories,
-        serviceCategory: formData.serviceCategories[0], // Fallback/Primary legacy support
+        serviceCategory: formData.serviceCategories[0], // Fallback
         skills: formData.skills,
         address: formData.address,
         status: formData.status

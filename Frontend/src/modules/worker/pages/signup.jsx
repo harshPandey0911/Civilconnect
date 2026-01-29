@@ -6,6 +6,16 @@ import { themeColors } from '../../../theme';
 import { workerAuthService } from '../../../services/authService';
 import Logo from '../../../components/common/Logo';
 
+import { z } from "zod";
+
+// Zod schema for Worker Signup
+const workerSignupSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters").regex(/^[a-zA-Z\s]+$/, "Name can only contain letters"),
+  email: z.string().email("Please enter a valid email address"),
+  phoneNumber: z.string().regex(/^[6-9]\d{9}$/, "Please enter a valid 10-digit Indian phone number"),
+  aadhar: z.string().regex(/^\d{12}$/, "Aadhar number must be exactly 12 digits"),
+});
+
 const WorkerSignup = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -105,47 +115,27 @@ const WorkerSignup = () => {
     setDocumentPreview(null);
   };
 
-  // Validation helpers
-  const validateName = (name) => {
-    if (!name || !name.trim()) return 'Name is required';
-    if (name.trim().length < 2) return 'Name must be at least 2 characters';
-    if (!/^[a-zA-Z\s]+$/.test(name.trim())) return 'Name can only contain letters and spaces';
-    return null;
-  };
-
-  const validateEmail = (email) => {
-    if (!email || !email.trim()) return 'Email is required';
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) return 'Please enter a valid email address';
-    return null;
-  };
-
-  const validatePhone = (phone) => {
-    if (!phone) return 'Phone number is required';
-    if (phone.length !== 10) return 'Phone number must be exactly 10 digits';
-    if (!/^[6-9]\d{9}$/.test(phone)) return 'Please enter a valid Indian phone number';
-    return null;
-  };
-
-  const validateAadhar = (aadhar) => {
-    if (!aadhar) return 'Aadhar number is required';
-    if (aadhar.length !== 12) return 'Aadhar number must be exactly 12 digits';
-    if (!/^\d{12}$/.test(aadhar)) return 'Aadhar number can only contain digits';
-    return null;
-  };
-
-  const validateForm = () => {
-    const errors = [];
-    errors.push(validateName(formData.name));
-    errors.push(validateEmail(formData.email));
-    errors.push(validatePhone(formData.phoneNumber));
-    errors.push(validateAadhar(formData.aadhar));
-    if (!formData.aadharDocument) errors.push('Please upload Aadhar document');
-
-    return errors.filter(e => e !== null);
-  };
-
   const handleDetailsSubmit = async (e) => {
+    e.preventDefault();
+
+    // Zod Validation
+    const validationResult = workerSignupSchema.safeParse({
+      name: formData.name,
+      email: formData.email,
+      phoneNumber: formData.phoneNumber,
+      aadhar: formData.aadhar
+    });
+
+    if (!validationResult.success) {
+      validationResult.error.errors.forEach(err => toast.error(err.message));
+      return;
+    }
+
+    // Manual Document Check
+    if (!formData.aadharDocument && !documentPreview) {
+      toast.error('Please upload Aadhar document');
+      return;
+    }
     e.preventDefault();
 
     const errors = validateForm();

@@ -10,7 +10,27 @@ import { themeColors } from '../../../../theme';
 import NotificationBell from '../../components/common/NotificationBell';
 import { uploadToCloudinary } from '../../../../utils/cloudinaryUpload';
 
+import { z } from "zod";
+
+// Zod schema for Scrap
+const scrapSchema = z.object({
+  title: z.string().min(3, "Title too short"),
+  category: z.string(),
+  quantity: z.string().min(1, "Quantity is required"),
+  expectedPrice: z.union([z.string(), z.number()]).optional(),
+  description: z.string().optional(),
+  address: z.object({
+    addressLine1: z.string().min(5, "Address must be selected"),
+    city: z.string().optional(),
+    state: z.string().optional(),
+    pincode: z.string().optional(),
+    lat: z.any().optional(),
+    lng: z.any().optional()
+  }).refine((data) => data.addressLine1 && data.addressLine1.length > 0, { message: "Pickup address is required" })
+});
+
 const UserScrapPage = () => {
+  // ... imports and basic state ...
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('active'); // 'active' | 'history'
   const [scraps, setScraps] = useState([]);
@@ -87,12 +107,15 @@ const UserScrapPage = () => {
 
   const handleCreate = async (e) => {
     e.preventDefault();
-    try {
-      // Basic validation
-      if (!formData.title || !formData.quantity) {
-        return toast.error('Please fill required fields');
-      }
 
+    // Zod Validation
+    const validationResult = scrapSchema.safeParse(formData);
+    if (!validationResult.success) {
+      toast.error(validationResult.error.errors[0].message);
+      return;
+    }
+
+    try {
       setIsUploading(true);
       toast.loading('Uploading images and listing items...', { id: 'scrap' });
 
