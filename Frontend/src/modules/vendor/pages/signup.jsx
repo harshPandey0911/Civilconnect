@@ -213,6 +213,8 @@ const VendorSignup = () => {
           verificationToken
         };
 
+        toast.success("Sending data to server, please wait...", { duration: 3000 });
+
         const response = await register(registerData);
 
         if (response.success) {

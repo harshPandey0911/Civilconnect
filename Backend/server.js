@@ -64,10 +64,28 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
+// CORS configuration finished above
+
+// DEBUG: Log Vendor Register Request (Placed BEFORE Body Parser to catch connection)
+app.use('/api/vendors/auth/register', (req, res, next) => {
+  console.log('================================================');
+  console.log('DEBUG: Vendor Register Request Hit Server (Pre-BodyParser)');
+  console.log('Method:', req.method);
+  console.log('Headers Content-Type:', req.headers['content-type']);
+  console.log('Headers Content-Length:', req.headers['content-length']);
+  console.log('Origin:', req.headers['origin']);
+  console.log('================================================');
+  next();
+});
+
 // Body parser middleware
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cookieParser());
+
+//For camera clicks feature 
+// app.use(express.json({ limit: "20mb" })); // REMOVED redundant
+// app.use(express.urlencoded({ extended: true, limit: "20mb" })); // REMOVED redundant
 
 // DEBUG: Log Booking Request Body
 app.use('/api/users/bookings', (req, res, next) => {
@@ -76,23 +94,7 @@ app.use('/api/users/bookings', (req, res, next) => {
   }
   next();
 });
-
-// DEBUG: Log Vendor Register Request
-app.use('/api/vendors/auth/register', (req, res, next) => {
-  console.log('------------------------------------------------');
-  console.log('DEBUG: Vendor Register Request Received');
-  console.log('Headers Content-Type:', req.headers['content-type']);
-  console.log('Body Keys:', Object.keys(req.body));
-  if (req.body.aadharDocument) {
-    console.log('Aadhar Document Length:', req.body.aadharDocument.length);
-    console.log('Aadhar Start:', req.body.aadharDocument.substring(0, 50));
-  } else {
-    console.log('Aadhar Document: UNDEFINED');
-  }
-  console.log('req.file:', req.file); // Expected to be undefined in current setup
-  console.log('------------------------------------------------');
-  next();
-});
+// (Old Vendor Register Logger Removed)
 
 
 
