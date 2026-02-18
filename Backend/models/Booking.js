@@ -77,6 +77,10 @@ const bookingSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  // Visual Identity (For easier UI access)
+  categoryIcon: { type: String, default: null }, // URL to category icon
+  brandName: { type: String, default: null },    // e.g. "LG", "Samsung"
+  brandIcon: { type: String, default: null },    // URL to brand logo
   description: {
     type: String,
     trim: true
@@ -130,6 +134,7 @@ const bookingSchema = new mongoose.Schema({
     min: 0
   },
   // Extra Charges (Added by Vendor)
+  /* Deprecated: Use VendorBill for detailed charges
   extraCharges: [{
     name: { type: String, required: true },
     quantity: { type: Number, default: 1 },
@@ -140,6 +145,7 @@ const bookingSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  */
   // Total Value of the Booking
   finalAmount: {
     type: Number,
@@ -286,6 +292,9 @@ const bookingSchema = new mongoose.Schema({
   // ==========================================
   // 9. WORK COMPLETION
   // ==========================================
+  // ==========================================
+  // 9. WORK COMPLETION
+  // ==========================================
   workPhotos: [{
     type: String
   }],
@@ -295,14 +304,8 @@ const bookingSchema = new mongoose.Schema({
     address: String,
     verifiedAt: Date
   },
-  workDoneDetails: {
-    description: String,
-    items: [{
-      title: String,
-      qty: Number,
-      price: Number
-    }]
-  },
+  // Note: Detailed billing (items/parts) is now handled by VendorBill model
+  // workDoneDetails and extraCharges are deprecated in favor of VendorBill
 
   // ==========================================
   // 10. CANCELLATION
