@@ -248,7 +248,7 @@ const getPublicBrandBySlug = async (req, res) => {
  */
 const getPublicServices = async (req, res) => {
   try {
-    const { brandId, brandSlug } = req.query;
+    const { brandId, brandSlug, categoryId } = req.query;
 
     const query = { status: 'active' };
 
@@ -261,6 +261,10 @@ const getPublicServices = async (req, res) => {
       } else {
         return res.status(200).json({ success: true, services: [] });
       }
+    }
+
+    if (categoryId) {
+      query.categoryId = categoryId;
     }
 
     const services = await Service.find(query).sort({ createdAt: 1 }).lean();

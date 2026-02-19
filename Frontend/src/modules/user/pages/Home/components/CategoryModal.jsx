@@ -74,7 +74,8 @@ const CategoryModal = React.memo(({ isOpen, onClose, category, location, cartCou
       setLoading(true);
       const response = await publicCatalogService.getServices({
         brandId: brandId,
-        cityId: cityId // Optional if needed
+        cityId: cityId,
+        categoryId: category?.id
       });
       if (response.success) {
         setServices(response.services || []);
