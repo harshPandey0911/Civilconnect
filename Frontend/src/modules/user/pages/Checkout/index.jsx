@@ -1401,9 +1401,9 @@ const Checkout = () => {
           )}
         </div>
 
-        {/* Selected Address and Slot Display */}
-        {(houseNumber || addressDetails) && (
-          <div className="px-4 pt-2 pb-2 border-b border-gray-100">
+        {/* Address and Slot Display */}
+        <div className="px-4 pt-2 pb-2 border-b border-gray-100">
+          {(houseNumber || addressDetails) ? (
             <div className="space-y-2.5">
               {/* Address */}
               <div className="flex items-start gap-2.5">
@@ -1413,7 +1413,7 @@ const Checkout = () => {
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-gray-600 mb-0.5">Address</p>
                   <p className="text-sm font-medium text-black truncate">
-                    {houseNumber ? `${houseNumber}, ` : ''}{address}
+                    {houseNumber ? `${houseNumber}, ` : ''}{address || 'Select Address'}
                   </p>
                 </div>
                 <button
@@ -1453,8 +1453,24 @@ const Checkout = () => {
                 </div>
               )}
             </div>
-          </div>
-        )}
+          ) : (
+            <div
+              onClick={() => setShowAddressModal(true)}
+              className="flex items-center justify-between p-3 bg-red-50 border border-red-100 rounded-xl cursor-pointer active:scale-[0.98] transition-all"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                  <FiHome className="w-5 h-5 text-red-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-red-900">Delivery Address Missing</p>
+                  <p className="text-xs text-red-600">Please add address to see availability</p>
+                </div>
+              </div>
+              <FiEdit2 className="w-4 h-4 text-red-400" />
+            </div>
+          )}
+        </div>
 
         <div className="p-4">
           <button

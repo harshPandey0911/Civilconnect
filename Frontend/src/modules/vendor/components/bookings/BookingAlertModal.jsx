@@ -174,19 +174,12 @@ const BookingAlertModal = ({ isOpen, booking, onAccept, onReject, onAssign, onMi
               </div>
             </div>
 
-            <div className="flex items-center justify-center gap-8 mb-6 bg-emerald-50/50 py-3 rounded-2xl border border-emerald-100/50">
+            <div className="flex items-center justify-center mb-6 bg-emerald-50/50 py-3 rounded-2xl border border-emerald-100/50">
               <div className="text-center">
                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.1em] mb-1 block">Travel Distance</span>
                 <div className="text-2xl font-black text-emerald-600 tracking-tight flex items-center gap-1 justify-center">
                   <FiMapPin className="w-4 h-4" />
                   {booking.location?.distance || (booking.distance ? (String(booking.distance).includes('km') ? booking.distance : `${booking.distance} km`) : 'Near You')}
-                </div>
-              </div>
-              <div className="w-px h-10 bg-gray-200" />
-              <div className="text-center">
-                <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.1em] mb-1 block">Expected Earnings</span>
-                <div className="text-2xl font-black text-gray-900 tracking-tight uppercase">
-                  ₹{Number((booking.vendorEarnings > 0 ? booking.vendorEarnings : (booking.price > 0 ? booking.price : (booking.finalAmount > 0 ? booking.finalAmount * 0.9 : 0))) || 0).toFixed(0)}
                 </div>
               </div>
             </div>
