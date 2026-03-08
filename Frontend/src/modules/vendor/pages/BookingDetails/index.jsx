@@ -431,8 +431,12 @@ export default function BookingDetails() {
       return false;
     }
 
-    // IMPORTANT: Only for Cash/Pay at Home methods.
-    return (booking?.paymentMethod === 'cash' || booking?.paymentMethod === 'pay_at_home');
+    // IMPORTANT: Only for Cash/Pay at Home methods OR Online if not paid yet.
+    return (
+      booking?.paymentMethod === 'cash' ||
+      booking?.paymentMethod === 'pay_at_home' ||
+      booking?.paymentMethod === 'online'
+    );
   };
 
 
@@ -1000,7 +1004,11 @@ export default function BookingDetails() {
                 )}
               </div>
               <div className="flex justify-between items-center pt-2 border-t border-emerald-200/50">
-                <span className="text-emerald-800 font-bold text-xs uppercase tracking-wider">Total Net Earnings</span>
+                <span className="text-emerald-800 font-bold text-xs uppercase tracking-wider">
+                  {(booking?.paymentStatus === 'SUCCESS' || booking?.paymentStatus === 'paid' || booking?.cashCollected)
+                    ? 'Total Net Earnings'
+                    : 'Estimated Net Earnings'}
+                </span>
                 <span className="text-emerald-700 font-black text-xl">
                   ₹{(bill?.vendorTotalEarning || booking.vendorEarnings || 0).toFixed(2)}
                 </span>
