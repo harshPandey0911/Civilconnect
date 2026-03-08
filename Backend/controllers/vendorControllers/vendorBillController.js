@@ -236,6 +236,7 @@ const createOrUpdateBill = async (req, res) => {
       vendorPartsEarning,
       vendorTotalEarning,
       companyRevenue,
+      applyPartsGST,
       status: BILL_STATUS.GENERATED,
       generatedAt: new Date()
     };

@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useLayoutEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FiCheck, FiTool, FiPackage, FiFileText, FiPlus, FiTrash2, FiArrowLeft, FiDollarSign, FiClock, FiCreditCard, FiArrowRight, FiKey } from 'react-icons/fi';
+import { FiCheck, FiTool, FiPackage, FiFileText, FiPlus, FiTrash2, FiArrowLeft, FiDollarSign, FiClock, FiCreditCard, FiArrowRight, FiKey, FiCheckCircle } from 'react-icons/fi';
+import { MdQrCode } from 'react-icons/md';
 import { toast } from 'react-hot-toast';
 import { workerTheme as themeColors } from '../../../../theme';
 import workerBillService from '../../../../services/workerBillService';
 import workerService from '../../../../services/workerService';
+import { publicCatalogService } from '../../../../services/catalogService';
+import api from '../../../../services/api';
 import OtpVerificationModal from './OtpVerificationModal';
 
 const BillingPage = () => {
@@ -60,6 +63,11 @@ const BillingPage = () => {
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [otpLoading, setOtpLoading] = useState(false);
 
+  // Payment Options
+  const [onlinePaymentData, setOnlinePaymentData] = useState(null);
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [qrLoading, setQrLoading] = useState(false);
+
   // --- Settings (payout configuration) ---
   const [payoutSettings, setPayoutSettings] = useState({
     serviceGstPct: 18,
@@ -72,6 +80,13 @@ const BillingPage = () => {
   useEffect(() => {
     fetchData();
   }, [id]);
+
+  // If job is already completed, redirect to details
+  useEffect(() => {
+    if (job && job.status === 'completed') {
+      navigate(`/worker/job/${id}`);
+    }
+  }, [job, id, navigate]);
 
   // Scroll to top on mount or view change or loading complete
   useLayoutEffect(() => {
@@ -88,10 +103,10 @@ const BillingPage = () => {
   // Save draft data
   useEffect(() => {
     if (id && !loading) {
-      const data = { selectedServices, selectedParts, customItems, transportCharges };
+      const data = { selectedServices, selectedParts, customItems, transportCharges, applyPartsGST };
       localStorage.setItem(`worker_billing_data_${id}`, JSON.stringify(data));
     }
-  }, [id, selectedServices, selectedParts, customItems, transportCharges, loading]);
+  }, [id, selectedServices, selectedParts, customItems, transportCharges, applyPartsGST, loading]);
 
   const fetchData = async () => {
     try {
@@ -100,9 +115,10 @@ const BillingPage = () => {
       const jobData = jobRes.data || jobRes;
       setJob(jobData);
 
-      const [servicesRes, partsRes] = await Promise.all([
+      const [servicesRes, partsRes, catRes] = await Promise.all([
         workerBillService.getServiceCatalog(),
-        workerBillService.getPartsCatalog()
+        workerBillService.getPartsCatalog(),
+        publicCatalogService.getCategories().catch(() => ({ success: false }))
       ]);
       const services = servicesRes.services || [];
       const parts = partsRes.parts || [];
@@ -110,12 +126,23 @@ const BillingPage = () => {
       setServicesCatalog(services);
       setPartsCatalog(parts);
 
-      // Extract unique categories
-      const cats = ['All', ...new Set(services.map(s => s.categoryId?.title || 'Uncategorized'))];
-      setServiceCategories(cats.filter(Boolean));
+      // Extract unique categories from public API if possible
+      let cats = ['All'];
+      const publicCats = catRes.success ? catRes.data.map(c => c.title) : [];
 
-      const pCats = ['All', ...new Set(parts.map(p => p.categoryId?.title || 'Uncategorized'))];
-      setPartCategories(pCats.filter(Boolean));
+      if (publicCats.length > 0) {
+        cats = ['All', ...publicCats];
+      } else {
+        // Fallback to local catalog items if API fails
+        cats = ['All', ...new Set([
+          ...services.map(s => s.categoryId?.title),
+          ...parts.map(p => p.categoryId?.title)
+        ])];
+      }
+
+      const cleanCats = [...new Set(cats.filter(Boolean))];
+      setServiceCategories(cleanCats);
+      setPartCategories(cleanCats);
 
       // 1. Try to load from Local Storage (Draft)
       const savedDraft = localStorage.getItem(`worker_billing_data_${id}`);
@@ -127,6 +154,7 @@ const BillingPage = () => {
           setSelectedParts(parsed.selectedParts || []);
           setCustomItems(parsed.customItems || []);
           setTransportCharges(parsed.transportCharges || 0);
+          setApplyPartsGST(parsed.applyPartsGST !== undefined ? parsed.applyPartsGST : true);
           hasDraft = true;
         } catch (e) {
           console.error('Error parsing draft:', e);
@@ -141,6 +169,7 @@ const BillingPage = () => {
           setSelectedParts(billRes.bill.parts || []);
           setCustomItems(billRes.bill.customItems || []);
           setTransportCharges(billRes.bill.transportCharges || 0);
+          setApplyPartsGST(billRes.bill.applyPartsGST !== undefined ? billRes.bill.applyPartsGST : true);
         }
 
         if (billRes.bill.payoutConfig) {
@@ -444,6 +473,61 @@ const BillingPage = () => {
       toast.error('Verification failed');
     } finally {
       setOtpLoading(false);
+    }
+  };
+
+  const handleOnlinePayment = async () => {
+    try {
+      setQrLoading(true);
+      // First save the bill to ensure backend has latest amounts
+      await workerBillService.createOrUpdateBill(id, {
+        services: selectedServices,
+        parts: selectedParts,
+        customItems,
+        transportCharges,
+        applyPartsGST
+      });
+
+      const res = await workerService.initiateOnlineCollection(id, calculations.finalBillAmount, [...selectedParts, ...customItems]);
+
+      if (res.success) {
+        setOnlinePaymentData(res.data);
+        setShowQrModal(true);
+        toast.success('QR Code generated!');
+      } else {
+        toast.error(res.message || 'Failed to generate QR');
+      }
+    } catch (error) {
+      console.error('Online payment error:', error);
+      toast.error('Failed to initiate online payment');
+    } finally {
+      setQrLoading(false);
+    }
+  };
+
+  const checkPaymentStatus = async () => {
+    try {
+      setQrLoading(true);
+      const res = await workerService.verifyOnlineCollection(id);
+
+      if (res.success && res.status === 'completed') {
+        toast.success(res.message || 'Payment verified! Job completed.');
+
+        // Cleanup local storage
+        localStorage.removeItem(`worker_billing_step_${id}`);
+        localStorage.removeItem(`worker_billing_max_step_${id}`);
+        localStorage.removeItem(`worker_billing_data_${id}`);
+
+        // Navigate to completion page or job details
+        navigate(`/worker/job/${id}`);
+      } else {
+        toast.error(res.message || 'Payment not yet detected. Please wait a moment.');
+      }
+    } catch (error) {
+      console.error('Check payment status error:', error);
+      toast.error(error.response?.data?.message || 'Failed to verify payment');
+    } finally {
+      setQrLoading(false);
     }
   };
 
@@ -1007,44 +1091,61 @@ const BillingPage = () => {
           </>
         )}
         {currentStep === 5 && (
-          <>
-            <button
-              onClick={() => setCurrentStep(4)}
-              disabled={submitting || otpLoading}
-              className="flex-1 py-3 text-gray-600 font-bold bg-white border border-gray-200 rounded-xl disabled:opacity-50"
-            >
-              Back
-            </button>
-
-            {job.paymentMethod === 'cash' || job.paymentMethod === 'pay_at_home' || job.paymentMethod === 'plan_benefit' ? (
-              isOtpSent ? (
-                <button
-                  onClick={() => setShowOtpModal(true)}
-                  disabled={otpLoading}
-                  className="flex-[2] py-3.5 bg-gray-900 text-white font-bold rounded-xl shadow-xl flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-70 disabled:scale-100"
-                >
-                  <FiKey className="w-5 h-5" />
-                  {otpLoading ? 'Verifying...' : 'Enter OTP to Confirm'}
-                </button>
-              ) : (
-                <button
-                  onClick={handleSendOTP}
-                  disabled={otpLoading}
-                  className="flex-[2] py-3.5 bg-blue-600 text-white font-bold rounded-xl shadow-xl flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-70 disabled:scale-100"
-                >
-                  {otpLoading ? 'Sending...' : <><FiDollarSign className="w-5 h-5" /> Send OTP to User</>}
-                </button>
-              )
-            ) : (
+          <div className="flex flex-col w-full gap-3">
+            <div className="flex gap-3">
               <button
-                onClick={handleSubmit}
-                disabled={submitting}
-                className="flex-[2] py-3.5 bg-gray-900 text-white font-bold rounded-xl shadow-xl flex items-center justify-center gap-2 disabled:opacity-70"
+                onClick={() => setCurrentStep(4)}
+                disabled={submitting || otpLoading || qrLoading}
+                className="flex-1 py-3 text-gray-600 font-bold bg-white border border-gray-200 rounded-xl disabled:opacity-50"
               >
-                {submitting ? 'Processing...' : <><FiCheck className="w-5 h-5" />Confirm & Generate Bill</>}
+                Back
               </button>
-            )}
-          </>
+
+              <button
+                onClick={handleSubmitDraft}
+                disabled={submitting}
+                className="flex-1 py-3 text-blue-600 font-bold bg-blue-50 border border-blue-100 rounded-xl disabled:opacity-50"
+              >
+                Save Draft
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center mb-1">Select Payment Mode</p>
+
+              <div className="grid grid-cols-2 gap-3">
+                {/* Cash Option */}
+                {isOtpSent ? (
+                  <button
+                    onClick={() => setShowOtpModal(true)}
+                    className="py-4 bg-gray-900 text-white font-bold rounded-2xl shadow-xl flex flex-col items-center justify-center gap-1 active:scale-95 transition-all"
+                  >
+                    <FiKey className="w-5 h-5" />
+                    <span className="text-xs">Enter OTP</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleSendOTP}
+                    disabled={otpLoading || qrLoading}
+                    className="py-4 bg-emerald-600 text-white font-bold rounded-2xl shadow-xl flex flex-col items-center justify-center gap-1 active:scale-95 transition-all disabled:opacity-50"
+                  >
+                    <FiDollarSign className="w-5 h-5" />
+                    <span className="text-xs">Pay in Cash</span>
+                  </button>
+                )}
+
+                {/* Online Option */}
+                <button
+                  onClick={handleOnlinePayment}
+                  disabled={otpLoading || qrLoading}
+                  className="py-4 bg-blue-600 text-white font-bold rounded-2xl shadow-xl flex flex-col items-center justify-center gap-1 active:scale-95 transition-all disabled:opacity-50"
+                >
+                  <MdQrCode className="w-5 h-5" />
+                  <span className="text-xs">{qrLoading ? 'Generating...' : 'Online (QR)'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
 
@@ -1055,6 +1156,52 @@ const BillingPage = () => {
         onVerify={handleVerifyOTP}
         loading={otpLoading}
       />
+
+      {/* QR Code Modal for Online Payment */}
+      {showQrModal && onlinePaymentData && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="bg-white w-full max-w-sm rounded-[2.5rem] overflow-hidden shadow-2xl relative animate-in zoom-in-95 duration-200">
+            <div className="p-8 text-center">
+              <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <MdQrCode className="w-8 h-8" />
+              </div>
+              <h2 className="text-2xl font-black text-gray-900 mb-2">Scan & Pay</h2>
+              <p className="text-sm text-gray-500 mb-6">Ask customer to scan to pay <span className="font-bold text-gray-900">₹{calculations.finalBillAmount.toFixed(2)}</span></p>
+
+              <div
+                className="bg-gray-50 p-4 rounded-3xl inline-block mb-8 border border-gray-100 shadow-inner cursor-pointer hover:bg-gray-100 transition-colors relative group"
+                onClick={() => window.open(onlinePaymentData.paymentUrl, '_blank')}
+                title="Click to open payment link"
+              >
+                <img
+                  src={onlinePaymentData.qrImageUrl}
+                  alt="Payment QR"
+                  className="w-48 h-48 mx-auto mix-blend-multiply"
+                />
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-white/40 rounded-3xl">
+                  <p className="text-[10px] font-bold text-blue-600 bg-white px-2 py-1 rounded-full shadow-sm">Click to open link</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <button
+                  onClick={checkPaymentStatus}
+                  className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
+                >
+                  <FiCheckCircle className="w-5 h-5" />
+                  Paid? Check Status
+                </button>
+                <button
+                  onClick={() => setShowQrModal(false)}
+                  className="w-full py-3 text-gray-500 font-bold hover:text-gray-700 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

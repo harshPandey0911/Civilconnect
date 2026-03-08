@@ -54,7 +54,6 @@ const Profile = () => {
             totalJobs: workerData.totalJobs || 0,
             completedJobs: workerData.completedJobs || 0,
             serviceCategories: workerData.serviceCategories || (workerData.serviceCategory ? [workerData.serviceCategory] : []),
-            skills: workerData.skills || [],
             photo: workerData.profilePhoto || null,
             isPhoneVerified: workerData.isPhoneVerified || false,
             isEmailVerified: workerData.isEmailVerified || false
@@ -75,7 +74,6 @@ const Profile = () => {
               totalJobs: localWorkerData.totalJobs || 0,
               completedJobs: localWorkerData.completedJobs || 0,
               serviceCategories: localWorkerData.serviceCategories || (localWorkerData.serviceCategory ? [localWorkerData.serviceCategory] : []),
-              skills: localWorkerData.skills || [],
               photo: localWorkerData.profilePhoto || null
             });
             toast.info('Loaded profile from local storage (API failed)');
@@ -97,7 +95,6 @@ const Profile = () => {
             totalJobs: localWorkerData.totalJobs || 0,
             completedJobs: localWorkerData.completedJobs || 0,
             serviceCategories: localWorkerData.serviceCategories || (localWorkerData.serviceCategory ? [localWorkerData.serviceCategory] : []),
-            skills: localWorkerData.skills || [],
             photo: localWorkerData.profilePhoto || null
           });
           toast.info('Loaded profile from local storage (API failed)');

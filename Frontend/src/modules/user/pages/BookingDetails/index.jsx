@@ -139,25 +139,18 @@ const BookingDetails = () => {
   // Track if we've shown the payment modal this session to prevent re-opening on data refresh
 
 
-  // Handle Payment Modal Visibility - Only auto-open ONCE per session AND if payment is PENDING
+  // Handle Payment Modal Visibility - Auto-open on work completion OR QR initiation
   useEffect(() => {
-    // Check if payment is already done (success or collected)
     const isPaymentDone = booking?.paymentStatus === 'success' || booking?.cashCollected === true;
-
-    // Open logic: 
-    // 1. Has verification OTP (Work is done)
-    // 2. Payment is NOT done (Pending)
-    // 3. Haven't shown modal automatically in this session yet
-    // Check session storage to see if we already showed it this session
     const hasShown = booking ? sessionStorage.getItem(`payment_modal_shown_${booking._id}`) : false;
 
-    if (booking && booking.customerConfirmationOTP && !isPaymentDone && !hasShown) {
+    // Open if: (Has Bill/OTP OR QR initiated) AND Payment not done AND not shown yet
+    if (booking && (booking.customerConfirmationOTP || booking.qrPaymentInitiated) && !isPaymentDone && !hasShown) {
       setShowPaymentModal(true);
       sessionStorage.setItem(`payment_modal_shown_${booking._id}`, 'true');
     }
-    // Close logic:
-    // If payment becomes done or OTP missing, close it.
-    else if (!booking?.customerConfirmationOTP || isPaymentDone) {
+    // Close if payment becomes done
+    else if (isPaymentDone) {
       setShowPaymentModal(false);
     }
   }, [booking]);

@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const { authenticate } = require('../../middleware/authMiddleware');
-const { isVendor, isWorker } = require('../../middleware/roleMiddleware');
 const {
   initiateCashCollection,
+  initiateOnlineCollection,
+  verifyOnlinePayment,
   confirmCashCollection,
   customerConfirmPayment,
   getCashCollectionStatus
@@ -14,12 +15,16 @@ router.use(authenticate);
 
 // Vendor/Worker routes
 router.post('/:id/initiate', initiateCashCollection);
+router.post('/:id/initiate-online', initiateOnlineCollection);
 router.post('/:id/confirm', confirmCashCollection);
+
+// Explicit verification route
+router.post('/:id/verify-online', verifyOnlinePayment);
 
 // Customer route
 router.post('/:id/customer-confirm', customerConfirmPayment);
 
-// Status route (shared)
+// Status route (read-only check)
 router.get('/:id/status', getCashCollectionStatus);
 
 module.exports = router;

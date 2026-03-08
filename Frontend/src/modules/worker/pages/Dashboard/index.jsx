@@ -51,7 +51,6 @@ const Dashboard = () => {
     phone: '+91 9876543210',
     photo: null,
     categories: [],
-    skills: [],
     address: null,
   });
   const [recentJobs, setRecentJobs] = useState([]);
@@ -98,8 +97,7 @@ const Dashboard = () => {
           name: profile.name || 'Worker Name',
           phone: profile.phone || '',
           photo: profile.profilePhoto || null,
-          categories: profile.serviceCategory ? [profile.serviceCategory] : (profile.serviceCategories || []),
-          skills: profile.skills || [],
+          categories: profile.serviceCategories || (profile.serviceCategory ? [profile.serviceCategory] : []),
           address: profile.address,
         });
       }
@@ -273,7 +271,6 @@ const Dashboard = () => {
 
         {/* Incomplete Profile Prompt */}
         {((!workerProfile.categories || workerProfile.categories.length === 0) ||
-          (!workerProfile.skills || workerProfile.skills.length === 0) ||
           (!workerProfile.address || Object.keys(workerProfile.address).length === 0)) && (
             <div className="px-4 pt-2 -mb-2">
               <div
@@ -287,7 +284,7 @@ const Dashboard = () => {
                   <div className="ml-3">
                     <p className="text-sm font-bold text-orange-700">Profile Incomplete</p>
                     <p className="text-sm text-orange-600">
-                      Complete your profile (Address, Category, Skills) to start receiving jobs.
+                      Complete your profile (Address and Category) to start receiving jobs.
                     </p>
                   </div>
                   <div className="ml-auto">

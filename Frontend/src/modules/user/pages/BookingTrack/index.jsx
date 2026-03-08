@@ -8,6 +8,7 @@ import { paymentService } from '../../../../services/paymentService';
 import { toast } from 'react-hot-toast';
 import { useAppNotifications } from '../../../../hooks/useAppNotifications';
 import LogoLoader from '../../../../components/common/LogoLoader';
+import PaymentVerificationModal from '../../components/booking/PaymentVerificationModal';
 
 
 const toAssetUrl = (url) => {
@@ -59,6 +60,7 @@ const BookingTrack = () => {
 
   const [paying, setPaying] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
@@ -274,6 +276,10 @@ const BookingTrack = () => {
             if (!prev) return prev;
             return { ...prev, ...(data.data || data) };
           });
+          if (data.qrPaymentInitiated) {
+            setShowPaymentModal(true);
+            toast.success('Professional has initiated payment!');
+          }
           refreshBooking(false);
         }
       };
@@ -923,6 +929,12 @@ const BookingTrack = () => {
       </div>
 
 
+      <PaymentVerificationModal
+        isOpen={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        booking={booking}
+        onPayOnline={handleOnlinePayment}
+      />
     </div>
   );
 };

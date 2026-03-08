@@ -51,7 +51,6 @@ const EditProfile = () => {
       pincode: '',
     },
     serviceCategories: [],
-    skills: [],
     profilePhoto: null,
     status: 'OFFLINE'
   });
@@ -91,7 +90,6 @@ const EditProfile = () => {
               pincode: w.address?.pincode || '',
             },
             serviceCategories: w.serviceCategories || (w.serviceCategory ? [w.serviceCategory] : []),
-            skills: w.skills || [],
             profilePhoto: w.profilePhoto || null,
             status: w.status || 'OFFLINE'
           });
@@ -171,14 +169,6 @@ const EditProfile = () => {
     });
   };
 
-  const toggleSkill = (skill) => {
-    setFormData(prev => {
-      const skills = prev.skills.includes(skill)
-        ? prev.skills.filter(s => s !== skill)
-        : [...prev.skills, skill];
-      return { ...prev, skills };
-    });
-  };
 
   const handleAddressSave = (houseNumber, location) => {
     // Extract components from Google Maps location
@@ -270,13 +260,6 @@ const EditProfile = () => {
     }
   };
 
-  // Get aggregated sub-services (skills) from ALL selected categories
-  const availableSkills = categories
-    .filter(c => formData.serviceCategories.includes(c.title))
-    .flatMap(c => c.subServices || []);
-
-  // Remove duplicates
-  const uniqueAvailableSkills = [...new Set(availableSkills.map(s => typeof s === 'string' ? s : (s.name || s.title)))];
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">

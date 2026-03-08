@@ -1,8 +1,99 @@
 const Booking = require('../../models/Booking');
 const Vendor = require('../../models/Vendor');
 const Transaction = require('../../models/Transaction');
-const { PAYMENT_STATUS } = require('../../utils/constants');
+const { PAYMENT_STATUS, BOOKING_STATUS } = require('../../utils/constants');
 const { recordBookingEarning } = require('../../services/earningTrackerService');
+const { createQRCode, getQRCodePayments } = require('../../services/razorpayService');
+
+/**
+ * Initiate Online Collection (Show QR Code)
+ */
+exports.initiateOnlineCollection = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const booking = await Booking.findById(id);
+
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Booking not found' });
+    }
+
+    // Optional: Update final total and extra items if provided during initiation
+    const { totalAmount, extraItems } = req.body;
+    if (totalAmount !== undefined && !isNaN(parseFloat(totalAmount))) {
+      booking.finalAmount = parseFloat(totalAmount);
+      booking.userPayableAmount = parseFloat(totalAmount);
+    }
+
+    if (!booking.finalAmount || booking.finalAmount <= 0) {
+      return res.status(400).json({ success: false, message: 'Invalid payment amount' });
+    }
+
+    // Store extra items for proper commission calculation
+    if (extraItems && Array.isArray(extraItems) && extraItems.length > 0) {
+      booking.workDoneDetails = {
+        ...booking.workDoneDetails,
+        items: extraItems.map(item => ({
+          title: item.name || item.title,
+          qty: Number(item.qty) || Number(item.quantity) || 1,
+          price: Number(item.price) || 0
+        }))
+      };
+
+      booking.extraCharges = extraItems.map(item => ({
+        name: item.name || item.title,
+        quantity: Number(item.qty) || Number(item.quantity) || 1,
+        price: Number(item.price) || 0,
+        total: (Number(item.qty) || Number(item.quantity) || 1) * (Number(item.price) || 0)
+      }));
+
+      booking.extraChargesTotal = booking.extraCharges.reduce((sum, item) => sum + item.total, 0);
+      booking.markModified('workDoneDetails');
+      booking.markModified('extraCharges');
+    }
+
+    // Create QR Code
+    const qrResult = await createQRCode(
+      booking.finalAmount,
+      booking.bookingNumber,
+      {
+        bookingId: booking._id.toString(),
+        type: 'worker_initiated_online'
+      }
+    );
+
+    if (!qrResult.success) {
+      return res.status(500).json({ success: false, message: qrResult.error });
+    }
+
+    // Store QR ID to track later
+    booking.razorpayQrId = qrResult.qrCodeId;
+    await booking.save();
+
+    // Emit socket event to user with full bill details
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`user_${booking.userId}`).emit('booking_updated', {
+        bookingId: booking._id,
+        finalAmount: booking.finalAmount,
+        workDoneDetails: booking.workDoneDetails,
+        qrPaymentInitiated: true
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'QR Code generated',
+      data: {
+        qrImageUrl: qrResult.imageUrl,
+        paymentUrl: qrResult.paymentUrl,
+        amount: booking.finalAmount
+      }
+    });
+  } catch (error) {
+    console.error('Initiate online collection error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 
 /**
  * Initiate Cash Collection
@@ -350,17 +441,178 @@ exports.customerConfirmPayment = async (req, res) => {
 /**
  * Get Cash Collection Status
  */
-exports.getCashCollectionStatus = async (req, res) => {
+/**
+ * Verify Online Payment & Complete Job
+ * POST /api/bookings/cash/:id/verify-online
+ */
+exports.verifyOnlinePayment = async (req, res) => {
   try {
     const { id } = req.params;
-    const booking = await Booking.findById(id).select('cashCollected cashCollectedAt cashCollectedBy paymentStatus');
+    const booking = await Booking.findById(id);
 
     if (!booking) {
       return res.status(404).json({ success: false, message: 'Booking not found' });
     }
 
-    res.status(200).json({ success: true, data: booking });
+    if (!booking.razorpayQrId) {
+      return res.status(400).json({ success: false, message: 'No online payment initiated for this booking' });
+    }
+
+    // Only allow if status is WORK_DONE or already COMPLETED (idempotency)
+    if (booking.status !== BOOKING_STATUS.WORK_DONE && booking.status !== BOOKING_STATUS.COMPLETED) {
+      return res.status(400).json({ success: false, message: `Cannot verify payment for booking in ${booking.status} status` });
+    }
+
+    const qrRes = await getQRCodePayments(booking.razorpayQrId);
+
+    if (qrRes.success && qrRes.payments && qrRes.payments.length > 0) {
+      const capturedPayment = qrRes.payments.find(p => p.status === 'captured');
+
+      if (capturedPayment) {
+        console.log(`[QR Verify] Finalizing booking ${booking.bookingNumber}`);
+
+        // 1. Update Booking
+        booking.paymentStatus = PAYMENT_STATUS.SUCCESS;
+        booking.paymentMethod = 'online';
+        booking.razorpayPaymentId = capturedPayment.id;
+        booking.paymentId = capturedPayment.id;
+
+        if (booking.status !== BOOKING_STATUS.COMPLETED) {
+          booking.status = BOOKING_STATUS.COMPLETED;
+          booking.completedAt = new Date();
+        }
+
+        await booking.save();
+
+        // 2. Handle Earnings & Wallet
+        const VendorBill = require('../../models/VendorBill');
+        const bill = await VendorBill.findOne({ bookingId: booking._id });
+
+        let vendorEarning = 0;
+        if (bill) {
+          vendorEarning = bill.vendorTotalEarning;
+          bill.status = 'paid';
+          bill.paidAt = new Date();
+          await bill.save();
+        } else {
+          vendorEarning = booking.finalAmount * 0.8;
+        }
+
+        const vendorId = booking.vendorId;
+        const Vendor = require('../../models/Vendor');
+        await Vendor.findByIdAndUpdate(vendorId, {
+          $inc: { 'wallet.earnings': vendorEarning }
+        });
+
+        // 3. Transactions
+        await Transaction.create({
+          userId: booking.userId,
+          bookingId: booking._id,
+          amount: booking.finalAmount,
+          type: 'payment',
+          paymentMethod: 'online',
+          status: 'completed',
+          description: `QR payment for booking ${booking.bookingNumber}`,
+          referenceId: capturedPayment.id
+        });
+
+        if (vendorEarning > 0) {
+          await Transaction.create({
+            vendorId: booking.vendorId,
+            bookingId: booking._id,
+            amount: vendorEarning,
+            type: 'earnings_credit',
+            paymentMethod: 'system',
+            status: 'completed',
+            description: `Earnings for booking ${booking.bookingNumber}`,
+            metadata: { type: 'qr_payment_earning' }
+          });
+        }
+
+        // 4. Record Stats
+        recordBookingEarning({
+          date: new Date(),
+          totalRevenue: bill ? bill.grandTotal : booking.finalAmount,
+          platformCommission: bill ? bill.companyRevenue : (booking.finalAmount * 0.2),
+          vendorEarnings: vendorEarning,
+          totalGST: bill ? bill.totalGST : 0,
+          totalTDS: 0
+        });
+
+        // 5. Notify & Socket
+        const io = req.app.get('io');
+        if (io) {
+          io.to(`user_${booking.userId}`).emit('booking_updated', {
+            bookingId: booking._id,
+            status: 'completed',
+            paymentStatus: 'success'
+          });
+          io.to(`vendor_${booking.vendorId}`).emit('booking_updated', {
+            bookingId: booking._id,
+            status: 'completed'
+          });
+        }
+
+        return res.status(200).json({
+          success: true,
+          message: 'Payment verified and job completed',
+          status: 'completed'
+        });
+      }
+    }
+
+    return res.status(200).json({
+      success: false,
+      message: 'Payment not yet detected by Razorpay',
+      paymentStatus: 'pending'
+    });
+
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('Verify online payment error:', error);
+    res.status(500).json({ success: false, message: 'Verification failed' });
+  }
+};
+
+/**
+ * Get Cash / Payment Status
+ * Read-only check for UI
+ */
+exports.getCashCollectionStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const booking = await Booking.findById(id);
+
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Booking not found' });
+    }
+
+    const statusData = {
+      bookingId: booking._id,
+      status: booking.status,
+      paymentStatus: booking.paymentStatus,
+      paymentMethod: booking.paymentMethod,
+      cashCollected: booking.cashCollected || false,
+      isPaid: booking.paymentStatus === PAYMENT_STATUS.SUCCESS
+    };
+
+    if (booking.razorpayQrId && booking.paymentStatus === PAYMENT_STATUS.PENDING) {
+      const qrRes = await getQRCodePayments(booking.razorpayQrId);
+      if (qrRes.success && qrRes.payments && qrRes.payments.length > 0) {
+        const captured = qrRes.payments.find(p => p.status === 'captured');
+        if (captured) {
+          statusData.paymentDetected = true;
+          statusData.paymentId = captured.id;
+        }
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      data: statusData
+    });
+
+  } catch (error) {
+    console.error('Get status error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch status' });
   }
 };

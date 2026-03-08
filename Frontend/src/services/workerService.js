@@ -69,6 +69,22 @@ const workerService = {
     return response.data;
   },
 
+  initiateOnlineCollection: async (id, totalAmount, extraItems = []) => {
+    const response = await api.post(`/bookings/cash/${id}/initiate-online`, {
+      totalAmount,
+      extraItems
+    });
+    return response.data;
+  },
+
+  /**
+   * Verify online collection (QR) and finalize
+   */
+  verifyOnlineCollection: async (id) => {
+    const response = await api.post(`/bookings/cash/${id}/verify-online`);
+    return response.data;
+  },
+
   collectCash: async (id, otp, amount, extraItems = []) => {
     const response = await api.post(`/bookings/cash/${id}/confirm`, {
       otp,

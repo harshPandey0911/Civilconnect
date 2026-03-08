@@ -145,6 +145,11 @@ const vendorBillSchema = new mongoose.Schema({
     default: null
   },
 
+  applyPartsGST: {
+    type: Boolean,
+    default: true
+  },
+
   note: { type: String, default: null }
 
 }, {

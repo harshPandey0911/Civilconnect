@@ -2,17 +2,20 @@ const Razorpay = require('razorpay');
 
 // Initialize Razorpay with validation
 let razorpay;
+let isTestMode = true;
+
 try {
   if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
     console.error('⚠️  Razorpay credentials missing in .env file');
-    console.error('RAZORPAY_KEY_ID:', process.env.RAZORPAY_KEY_ID ? 'Present' : 'Missing');
-    console.error('RAZORPAY_KEY_SECRET:', process.env.RAZORPAY_KEY_SECRET ? 'Present' : 'Missing');
   } else {
     razorpay = new Razorpay({
       key_id: process.env.RAZORPAY_KEY_ID,
       key_secret: process.env.RAZORPAY_KEY_SECRET
     });
-    console.log('✅ Razorpay initialized successfully');
+
+    // Check if we are in test or live mode
+    isTestMode = process.env.RAZORPAY_KEY_ID.startsWith('rzp_test');
+    console.log(`✅ Razorpay initialized in ${isTestMode ? 'TEST' : 'LIVE'} mode`);
   }
 } catch (error) {
   console.error('❌ Failed to initialize Razorpay:', error.message);
@@ -132,10 +135,161 @@ const refundPayment = async (paymentId, amount = null, notes = {}) => {
   }
 };
 
+/**
+ * Create Razorpay QR Code
+ * Tries the modern standalone QR API first, then falls back to Payment Link if needed.
+ */
+const createQRCode = async (amount, bookingNumber, notes = {}) => {
+  try {
+    if (!razorpay) {
+      return { success: false, error: 'Razorpay not initialized' };
+    }
+
+    const axios = require('axios');
+    const auth = Buffer.from(`${process.env.RAZORPAY_KEY_ID}:${process.env.RAZORPAY_KEY_SECRET}`).toString('base64');
+
+    const payload = {
+      type: 'upi_qr',
+      name: 'Homster Payment',
+      usage: 'single_use',
+      fixed_amount: true,
+      payment_amount: Math.round(amount * 100), // Convert to paise
+      description: `Payment for Booking #${bookingNumber}`,
+      notes
+    };
+
+    console.log('[QR Service] Attempting QR creation for Booking:', bookingNumber);
+
+    // Endpoint 1: Standalone QR API (Most common now)
+    try {
+      const response = await axios.post('https://api.razorpay.com/v1/qr_codes', payload, {
+        headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/json' }
+      });
+
+      const qrCode = response.data;
+      console.log('✅ QR Code created via Standalone API');
+      return {
+        success: true,
+        qrCodeId: qrCode.id,
+        imageUrl: qrCode.image_url,
+        paymentUrl: qrCode.payment_url
+      };
+    } catch (e1) {
+      console.warn('⚠️ Standalone QR API failed, trying Payments/QR API...');
+
+      // Endpoint 2: Payments/QR API (Legacy or specific accounts)
+      try {
+        const response = await axios.post('https://api.razorpay.com/v1/payments/qr_codes', payload, {
+          headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/json' }
+        });
+
+        const qrCode = response.data;
+        console.log('✅ QR Code created via Payments/QR API');
+        return {
+          success: true,
+          qrCodeId: qrCode.id,
+          imageUrl: qrCode.image_url,
+          paymentUrl: qrCode.payment_url
+        };
+      } catch (e2) {
+        console.warn('⚠️ Both QR APIs failed, falling back to Payment Link...');
+
+        // Fallback: Create a Payment Link which has a QR option
+        const linkPayload = {
+          amount: Math.round(amount * 100),
+          currency: 'INR',
+          description: `Payment for Booking #${bookingNumber}`,
+          notes,
+          notify: { sms: false, email: false }
+        };
+
+        const linkResponse = await axios.post('https://api.razorpay.com/v1/payment_links', linkPayload, {
+          headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/json' }
+        });
+
+        const link = linkResponse.data;
+        console.log('✅ Payment Link created as fallback');
+
+        // Return the payment link short URL as the "QR Image" if we really can't get a QR
+        // In the UI we'll just show a "Scan to Pay" instructions or use a JS QR generator
+        return {
+          success: true,
+          qrCodeId: link.id,
+          imageUrl: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(link.short_url)}`,
+          paymentUrl: link.short_url,
+          isFallback: true
+        };
+      }
+    }
+  } catch (error) {
+    console.error('Razorpay QR/Link Error:', error.response?.data || error.message);
+    const errorMsg = error.response?.data?.error?.description || error.message;
+    return { success: false, error: errorMsg };
+  }
+};
+
+/**
+ * Get payments for a QR Code or Payment Link
+ */
+const getQRCodePayments = async (id) => {
+  try {
+    if (!razorpay) {
+      return { success: false, error: 'Razorpay not initialized' };
+    }
+
+    // If it's a payment link (fallback case)
+    if (id && id.startsWith('plink_')) {
+      const axios = require('axios');
+      const auth = Buffer.from(`${process.env.RAZORPAY_KEY_ID}:${process.env.RAZORPAY_KEY_SECRET}`).toString('base64');
+
+      try {
+        const response = await axios.get(`https://api.razorpay.com/v1/payment_links/${id}`, {
+          headers: { 'Authorization': `Basic ${auth}` }
+        });
+
+        const link = response.data;
+        console.log(`[QR Service] Checking Payment Link ${id} status: ${link.status}`);
+
+        // If link is paid, we returned a captured payment object
+        if (link.status === 'paid' || link.status === 'partially_paid') {
+          return {
+            success: true,
+            payments: [{
+              id: link.razorpay_payment_id || `pay_${Date.now()}`,
+              status: 'captured',
+              amount: link.amount_paid
+            }]
+          };
+        }
+        return { success: true, payments: [] };
+      } catch (linkError) {
+        console.error('Payment link fetch error:', linkError.response?.data || linkError.message);
+        throw linkError;
+      }
+    }
+
+    // Otherwise, standard QR Code check
+    const payments = await razorpay.qrCode.fetchAllPayments(id);
+    return {
+      success: true,
+      payments: payments.items || []
+    };
+  } catch (error) {
+    console.error('Razorpay fetch payments error:', error.message);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+};
+
 module.exports = {
   createOrder,
   verifyPayment,
   getPaymentDetails,
-  refundPayment
+  refundPayment,
+  createQRCode,
+  getQRCodePayments,
+  isTestMode: () => isTestMode
 };
 

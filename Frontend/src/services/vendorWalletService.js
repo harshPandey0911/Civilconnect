@@ -41,6 +41,25 @@ const vendorWalletService = {
   },
 
   /**
+   * Initiate online collection (QR)
+   */
+  initiateOnlineCollection: async (bookingId, totalAmount, extraItems = []) => {
+    const response = await api.post(`/bookings/cash/${bookingId}/initiate-online`, {
+      totalAmount,
+      extraItems
+    });
+    return response.data;
+  },
+
+  /**
+   * Verify online collection (QR) and finalize
+   */
+  verifyOnlineCollection: async (bookingId) => {
+    const response = await api.post(`/bookings/cash/${bookingId}/verify-online`);
+    return response.data;
+  },
+
+  /**
    * Confirm cash collection
    */
   confirmCashCollection: async (bookingId, amount, otp = '', extraItems = []) => {

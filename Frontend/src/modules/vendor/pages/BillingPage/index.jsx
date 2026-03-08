@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useLayoutEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FiCheck, FiTool, FiPackage, FiFileText, FiPlus, FiTrash2, FiArrowLeft, FiDollarSign, FiClock, FiCreditCard, FiArrowRight, FiKey } from 'react-icons/fi';
+import { FiCheck, FiTool, FiPackage, FiFileText, FiPlus, FiTrash2, FiArrowLeft, FiDollarSign, FiClock, FiCreditCard, FiArrowRight, FiKey, FiCheckCircle } from 'react-icons/fi';
+import { MdQrCode } from 'react-icons/md';
 import { toast } from 'react-hot-toast';
 import { vendorTheme as themeColors } from '../../../../theme';
 import vendorBillService from '../../../../services/vendorBillService';
 import vendorWalletService from '../../../../services/vendorWalletService';
 import { getBookingById } from '../../services/bookingService';
+import { publicCatalogService } from '../../../../services/catalogService';
 import OtpVerificationModal from './OtpVerificationModal';
 
 const BillingPage = () => {
@@ -50,6 +52,7 @@ const BillingPage = () => {
   const [selectedParts, setSelectedParts] = useState([]);
   const [customItems, setCustomItems] = useState([]);
   const [transportCharges, setTransportCharges] = useState(0);
+  const [applyPartsGST, setApplyPartsGST] = useState(true);
 
   // Search
   const [serviceSearch, setServiceSearch] = useState('');
@@ -59,6 +62,11 @@ const BillingPage = () => {
   const [isOtpSent, setIsOtpSent] = useState(false);
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [otpLoading, setOtpLoading] = useState(false);
+
+  // Payment Options
+  const [onlinePaymentData, setOnlinePaymentData] = useState(null);
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [qrLoading, setQrLoading] = useState(false);
 
   // Fetch Data
   useEffect(() => {
@@ -84,10 +92,10 @@ const BillingPage = () => {
   // Save draft data
   useEffect(() => {
     if (id && !loading) {
-      const data = { selectedServices, selectedParts, customItems, transportCharges };
+      const data = { selectedServices, selectedParts, customItems, transportCharges, applyPartsGST };
       localStorage.setItem(`billing_data_${id}`, JSON.stringify(data));
     }
-  }, [id, selectedServices, selectedParts, customItems, loading]);
+  }, [id, selectedServices, selectedParts, customItems, transportCharges, applyPartsGST, loading]);
 
   const fetchData = async () => {
     try {
@@ -95,9 +103,10 @@ const BillingPage = () => {
       const bookingRes = await getBookingById(id);
       setBooking(bookingRes.data || bookingRes);
 
-      const [servicesRes, partsRes] = await Promise.all([
+      const [servicesRes, partsRes, catRes] = await Promise.all([
         vendorBillService.getServiceCatalog(),
-        vendorBillService.getPartsCatalog()
+        vendorBillService.getPartsCatalog(),
+        publicCatalogService.getCategories()
       ]);
       const services = servicesRes.services || [];
       const parts = partsRes.parts || [];
@@ -105,12 +114,30 @@ const BillingPage = () => {
       setServicesCatalog(services);
       setPartsCatalog(parts);
 
-      // Extract unique categories
-      const cats = ['All', ...new Set(services.map(s => s.categoryId?.title || 'Uncategorized'))];
-      setServiceCategories(cats.filter(Boolean));
+      // Extract categories from categories API or catalog items
+      if (catRes && catRes.success) {
+        const apiCats = (catRes.categories || []).map(c => c.title);
+        const allCats = ['All', ...apiCats];
 
-      const pCats = ['All', ...new Set(parts.map(p => p.categoryId?.title || 'Uncategorized'))];
-      setPartCategories(pCats.filter(Boolean));
+        // Add Uncategorized if any catalog item is missing a category
+        const hasUncategorizedServices = services.some(s => !s.categoryId?.title);
+        const hasUncategorizedParts = parts.some(p => !p.categoryId?.title);
+        if (hasUncategorizedServices || hasUncategorizedParts) {
+          allCats.push('Uncategorized');
+        }
+
+        // Ensure uniqueness and filter nulls just in case
+        const uniqueCats = [...new Set(allCats)].filter(Boolean);
+        setServiceCategories(uniqueCats);
+        setPartCategories(uniqueCats);
+      } else {
+        // Fallback to legacy behavior if API fails
+        const cats = ['All', ...new Set(services.map(s => s.categoryId?.title || 'Uncategorized'))];
+        setServiceCategories(cats.filter(Boolean));
+
+        const pCats = ['All', ...new Set(parts.map(p => p.categoryId?.title || 'Uncategorized'))];
+        setPartCategories(pCats.filter(Boolean));
+      }
 
       // 1. Try to load from Local Storage (Draft)
       const savedDraft = localStorage.getItem(`billing_data_${id}`);
@@ -122,6 +149,7 @@ const BillingPage = () => {
           setSelectedParts(parsed.selectedParts || []);
           setCustomItems(parsed.customItems || []);
           setTransportCharges(parsed.transportCharges || 0);
+          setApplyPartsGST(parsed.applyPartsGST !== undefined ? parsed.applyPartsGST : true);
           hasDraft = true;
         } catch (e) {
           console.error('Error parsing draft:', e);
@@ -139,6 +167,7 @@ const BillingPage = () => {
           setSelectedParts(billRes.bill.parts || []);
           setCustomItems(billRes.bill.customItems || []);
           setTransportCharges(billRes.bill.transportCharges || 0);
+          setApplyPartsGST(billRes.bill.applyPartsGST !== undefined ? billRes.bill.applyPartsGST : true);
         }
 
         if (billRes.bill.payoutConfig) {
@@ -343,7 +372,9 @@ const BillingPage = () => {
     let partsGST = 0;
     selectedParts.forEach(p => {
       partsBase += (p.price * p.quantity);
-      partsGST += p.gstAmount;
+      if (applyPartsGST) {
+        partsGST += p.gstAmount;
+      }
     });
 
     // Custom Items: use partsGstPct
@@ -351,7 +382,9 @@ const BillingPage = () => {
     let customGST = 0;
     customItems.forEach(c => {
       customBase += (c.price * c.quantity);
-      customGST += c.gstAmount;
+      if (applyPartsGST) {
+        customGST += c.gstAmount;
+      }
     });
 
     // Visiting Charges
@@ -388,7 +421,7 @@ const BillingPage = () => {
       servicePayoutPct,
       partsPayoutPct
     };
-  }, [booking, selectedServices, selectedParts, customItems, transportCharges, payoutSettings]);
+  }, [booking, selectedServices, selectedParts, customItems, transportCharges, payoutSettings, applyPartsGST]);
 
 
   const handleSubmit = async () => {
@@ -398,7 +431,8 @@ const BillingPage = () => {
         services: selectedServices,
         parts: selectedParts,
         customItems,
-        transportCharges
+        transportCharges,
+        applyPartsGST
       });
 
       if (res.success) {
@@ -426,7 +460,8 @@ const BillingPage = () => {
         services: selectedServices,
         parts: selectedParts,
         customItems,
-        transportCharges
+        transportCharges,
+        applyPartsGST
       });
 
       const res = await vendorWalletService.initiateCashCollection(
@@ -482,6 +517,58 @@ const BillingPage = () => {
       toast.error('Verification failed');
     } finally {
       setOtpLoading(false);
+    }
+  };
+
+  const handleOnlinePayment = async () => {
+    try {
+      setQrLoading(true);
+      // First save the bill to ensure backend has latest amounts
+      await vendorBillService.createOrUpdateBill(id, {
+        services: selectedServices,
+        parts: selectedParts,
+        customItems,
+        transportCharges,
+        applyPartsGST
+      });
+
+      const res = await vendorWalletService.initiateOnlineCollection(id, calculations.finalBillAmount, [...selectedParts, ...customItems]);
+
+      if (res.success) {
+        setOnlinePaymentData(res.data);
+        setShowQrModal(true);
+        toast.success('QR Code generated!');
+      } else {
+        toast.error(res.message || 'Failed to initiate online payment');
+      }
+    } catch (error) {
+      console.error('Online payment error:', error);
+      toast.error('Failed to initiate online payment');
+    } finally {
+      setQrLoading(false);
+    }
+  };
+
+  const checkPaymentStatus = async () => {
+    try {
+      setQrLoading(true);
+      const res = await vendorWalletService.verifyOnlineCollection(id);
+
+      if (res.success) {
+        setShowQrModal(false);
+        toast.success('Payment verified successfully!');
+        localStorage.removeItem(`billing_step_${id}`);
+        localStorage.removeItem(`billing_max_step_${id}`);
+        localStorage.removeItem(`billing_data_${id}`);
+        navigate(`/vendor/booking/${id}`);
+      } else {
+        toast.error(res.message || 'Payment not yet confirmed');
+      }
+    } catch (error) {
+      console.error('Verify payment error:', error);
+      toast.error('Verification failed or payment pending');
+    } finally {
+      setQrLoading(false);
     }
   };
 
@@ -911,6 +998,27 @@ const BillingPage = () => {
                       <span className="w-6 h-6 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center text-xs"><FiPackage /></span>
                       Parts
                     </h4>
+
+                    {/* Parts GST toggle */}
+                    <label className="flex items-center gap-2.5 cursor-pointer mb-3 p-2.5 rounded-xl border border-dashed border-orange-200 bg-orange-50/50 hover:bg-orange-50 transition-colors">
+                      <div className="relative">
+                        <input
+                          type="checkbox"
+                          id="partsGstToggle"
+                          checked={applyPartsGST}
+                          onChange={e => setApplyPartsGST(e.target.checked)}
+                          className="sr-only"
+                        />
+                        <div className={`w-10 h-5 rounded-full transition-colors duration-200 ${applyPartsGST ? 'bg-orange-500' : 'bg-gray-300'}`}>
+                          <div className={`w-4 h-4 bg-white rounded-full shadow-sm absolute top-0.5 transition-all duration-200 ${applyPartsGST ? 'left-5' : 'left-0.5'}`} />
+                        </div>
+                      </div>
+                      <div className="text-left">
+                        <p className="text-xs font-bold text-gray-800">Apply Parts GST ({calculations.partsGstPct}%)</p>
+                        <p className="text-[10px] text-gray-400">{applyPartsGST ? `GST included: ₹${calculations.totalPartsGST.toFixed(2)}` : 'GST not charged on parts'}</p>
+                      </div>
+                    </label>
+
                     <div className="space-y-2 text-sm pl-2">
                       {selectedParts.map(p => <div key={p.catalogId} className="flex justify-between text-gray-600"><span>{p.name} x {p.quantity}</span><span>₹{(p.price * p.quantity).toFixed(2)}</span></div>)}
                       {customItems.map((c, i) => (
@@ -1037,34 +1145,39 @@ const BillingPage = () => {
               Back
             </button>
 
-            {booking.paymentMethod === 'cash' || booking.paymentMethod === 'pay_at_home' || booking.paymentMethod === 'plan_benefit' ? (
-              isOtpSent ? (
+            {/* Payment Options Grid for Step 5 */}
+            <div className="flex-[2] grid grid-cols-2 gap-2">
+              {/* Cash Option */}
+              {isOtpSent ? (
                 <button
                   onClick={() => setShowOtpModal(true)}
-                  disabled={otpLoading}
-                  className="flex-[2] py-3.5 bg-gray-900 text-white font-bold rounded-xl shadow-xl flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-70 disabled:scale-100"
+                  disabled={otpLoading || qrLoading}
+                  className="py-3 bg-gray-900 text-white font-bold rounded-xl shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-all text-[10px]"
                 >
-                  <FiKey className="w-5 h-5" />
-                  {otpLoading ? 'Verifying...' : 'Enter OTP to Confirm'}
+                  <FiKey className="w-4 h-4" />
+                  <span>Enter OTP</span>
                 </button>
               ) : (
                 <button
                   onClick={handleSendOTP}
-                  disabled={otpLoading}
-                  className="flex-[2] py-3.5 bg-blue-600 text-white font-bold rounded-xl shadow-xl flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-70 disabled:scale-100"
+                  disabled={otpLoading || qrLoading}
+                  className="py-3 bg-emerald-600 text-white font-bold rounded-xl shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-all disabled:opacity-50 text-[10px]"
                 >
-                  {otpLoading ? 'Sending...' : <><FiDollarSign className="w-5 h-5" /> Send OTP to User</>}
+                  <FiDollarSign className="w-4 h-4" />
+                  <span>Pay in Cash</span>
                 </button>
-              )
-            ) : (
+              )}
+
+              {/* Online Option */}
               <button
-                onClick={handleSubmit}
-                disabled={submitting}
-                className="flex-[2] py-3.5 bg-gray-900 text-white font-bold rounded-xl shadow-xl flex items-center justify-center gap-2 disabled:opacity-70"
+                onClick={handleOnlinePayment}
+                disabled={otpLoading || qrLoading}
+                className="py-3 bg-blue-600 text-white font-bold rounded-xl shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-all disabled:opacity-50 text-[10px]"
               >
-                {submitting ? 'Processing...' : <><FiCheck className="w-5 h-5" />Confirm & Generate Bill</>}
+                <MdQrCode className="w-4 h-4" />
+                <span>{qrLoading ? '...' : 'Online (QR)'}</span>
               </button>
-            )}
+            </div>
           </>
         )}
       </div>
@@ -1075,6 +1188,52 @@ const BillingPage = () => {
         onVerify={handleVerifyOTP}
         loading={otpLoading}
       />
+
+      {/* QR Code Modal for Online Payment */}
+      {showQrModal && onlinePaymentData && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="bg-white w-full max-w-sm rounded-[2.5rem] overflow-hidden shadow-2xl relative animate-in zoom-in-95 duration-200">
+            <div className="p-8 text-center">
+              <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <MdQrCode className="w-8 h-8" />
+              </div>
+              <h2 className="text-2xl font-black text-gray-900 mb-2">Scan & Pay</h2>
+              <p className="text-sm text-gray-500 mb-6">Ask customer to scan to pay <span className="font-bold text-gray-900">₹{calculations.finalBillAmount.toFixed(2)}</span></p>
+
+              <div
+                className="bg-gray-50 p-4 rounded-3xl inline-block mb-8 border border-gray-100 shadow-inner cursor-pointer hover:bg-gray-100 transition-colors relative group"
+                onClick={() => window.open(onlinePaymentData.paymentUrl, '_blank')}
+                title="Click to open payment link"
+              >
+                <img
+                  src={onlinePaymentData.qrImageUrl}
+                  alt="Payment QR"
+                  className="w-48 h-48 mx-auto mix-blend-multiply"
+                />
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-white/40 rounded-3xl">
+                  <p className="text-[10px] font-bold text-blue-600 bg-white px-2 py-1 rounded-full shadow-sm">Click to open link</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <button
+                  onClick={checkPaymentStatus}
+                  className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
+                >
+                  <FiCheckCircle className="w-5 h-5" />
+                  Paid? Check Status
+                </button>
+                <button
+                  onClick={() => setShowQrModal(false)}
+                  className="w-full py-3 text-gray-500 font-bold hover:text-gray-700 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

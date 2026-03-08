@@ -134,8 +134,6 @@ const bookingSchema = new mongoose.Schema({
     default: 0,
     min: 0
   },
-  // Extra Charges (Added by Vendor)
-  /* Deprecated: Use VendorBill for detailed charges
   extraCharges: [{
     name: { type: String, required: true },
     quantity: { type: Number, default: 1 },
@@ -146,7 +144,6 @@ const bookingSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
-  */
   // Total Value of the Booking (set after bill generation)
   finalAmount: {
     type: Number,
@@ -175,7 +172,7 @@ const bookingSchema = new mongoose.Schema({
     index: true
   },
   paymentMethod: {
-    type: String, // 'wallet', 'razorpay', 'cash', 'card', 'plan_benefit'
+    type: String, // 'wallet', 'razorpay', 'online', 'cash', 'card', 'plan_benefit'
     default: null
   },
   paymentId: {
@@ -190,6 +187,11 @@ const bookingSchema = new mongoose.Schema({
   razorpayPaymentId: {
     type: String,
     default: null
+  },
+  razorpayQrId: {
+    type: String,
+    default: null,
+    index: true
   },
   // Cash Collection Details
   cashCollected: {
@@ -307,6 +309,10 @@ const bookingSchema = new mongoose.Schema({
     lng: Number,
     address: String,
     verifiedAt: Date
+  },
+  workDoneDetails: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
   },
   // Note: Detailed billing (items/parts) is now handled by VendorBill model
   // workDoneDetails and extraCharges are deprecated in favor of VendorBill
