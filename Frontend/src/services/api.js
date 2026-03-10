@@ -169,24 +169,14 @@ export const handleLogout = (role = null) => {
 
   // Clear role-specific tokens selectively
   const clearTokens = (prefix) => {
-    // If we have a session token, we assume this is a session-based login
-    // and we only clear the session storage to protect other tabs using localStorage
-    if (sessionStorage.getItem(`${prefix}AccessToken`)) {
-      sessionStorage.removeItem(`${prefix}AccessToken`);
-      sessionStorage.removeItem(`${prefix}RefreshToken`);
-      sessionStorage.removeItem(`${prefix}Data`);
-    } else {
-      // If no session token found (or we explicitly want to clear local),
-      // we assume it's a localStorage based login
-      localStorage.removeItem(`${prefix}AccessToken`);
-      localStorage.removeItem(`${prefix}RefreshToken`);
-      localStorage.removeItem(`${prefix}Data`);
+    // Clear both sessionStorage and localStorage to prevent state mismatch
+    sessionStorage.removeItem(`${prefix}AccessToken`);
+    sessionStorage.removeItem(`${prefix}RefreshToken`);
+    sessionStorage.removeItem(`${prefix}Data`);
 
-      // Also clear session just in case of ghost data, but ONLY if we are falling back to clearing local
-      sessionStorage.removeItem(`${prefix}AccessToken`);
-      sessionStorage.removeItem(`${prefix}RefreshToken`);
-      sessionStorage.removeItem(`${prefix}Data`);
-    }
+    localStorage.removeItem(`${prefix}AccessToken`);
+    localStorage.removeItem(`${prefix}RefreshToken`);
+    localStorage.removeItem(`${prefix}Data`);
   };
 
   if (role === 'vendor') {

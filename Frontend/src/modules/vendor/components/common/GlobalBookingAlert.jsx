@@ -15,6 +15,9 @@ export default function GlobalBookingAlert() {
   useEffect(() => {
     // Fetch global config for accurate timer
     const fetchConfig = async () => {
+      const token = localStorage.getItem('vendorAccessToken') || sessionStorage.getItem('vendorAccessToken');
+      if (!token) return;
+
       try {
         const { vendorDashboardService } = await import('../../services/dashboardService');
         const response = await vendorDashboardService.getDashboardStats();

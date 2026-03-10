@@ -14,7 +14,6 @@ import { registerFCMToken } from '../../../../services/pushNotificationService';
 import LogoLoader from '../../../../components/common/LogoLoader';
 import StatsCards from './components/StatsCards';
 import PendingBookings from './components/PendingBookings';
-import PendingBookings from './components/PendingBookings';
 
 
 const SOCKET_URL = import.meta.env.VITE_API_BASE_URL?.replace(/\/api$/, '') || 'http://localhost:5000';
