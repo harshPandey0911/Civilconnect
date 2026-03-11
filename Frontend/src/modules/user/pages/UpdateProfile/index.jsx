@@ -4,6 +4,7 @@ import { FiArrowLeft, FiUser, FiMail, FiPhone, FiCamera } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 import { themeColors } from '../../../../theme';
 import { userAuthService } from '../../../../services/authService';
+import flutterBridge from '../../../../utils/flutterBridge';
 
 import { z } from "zod";
 
@@ -24,9 +25,17 @@ const UpdateProfile = () => {
   const [photoPreview, setPhotoPreview] = useState(null);
   const [photoFile, setPhotoFile] = useState(null);
   const [uploading, setUploading] = useState(false);
-
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+
+  const handleNativeCamera = async () => {
+    const file = await flutterBridge.openCamera();
+    if (file) {
+      setPhotoFile(file);
+      setPhotoPreview(URL.createObjectURL(file));
+      flutterBridge.hapticFeedback('success');
+    }
+  };
 
   // Fetch user profile on component mount
   useEffect(() => {
@@ -226,8 +235,9 @@ const UpdateProfile = () => {
           <div className="flex flex-col items-center justify-center mb-6">
             <div className="relative group">
               <div
-                className="w-28 h-28 rounded-full overflow-hidden border-4 border-white shadow-xl"
+                className="w-28 h-28 rounded-full overflow-hidden border-4 border-white shadow-xl cursor-pointer"
                 style={{ background: '#f0f0f0' }}
+                onClick={() => flutterBridge.isFlutter ? handleNativeCamera() : null}
               >
                 {photoPreview || formData.profilePhoto ? (
                   <img
@@ -243,20 +253,24 @@ const UpdateProfile = () => {
               </div>
 
               <label
-                htmlFor="user-photo-upload"
+                htmlFor={flutterBridge.isFlutter ? "" : "user-photo-upload"}
+                onClick={() => flutterBridge.isFlutter ? handleNativeCamera() : null}
                 className="absolute bottom-1 right-1 p-2 rounded-full cursor-pointer shadow-lg transition-transform active:scale-95 hover:scale-105"
                 style={{ background: themeColors.button }}
               >
                 <FiCamera className="w-5 h-5 text-white" />
-                <input
-                  id="user-photo-upload"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handlePhotoChange}
-                />
+                {!flutterBridge.isFlutter && (
+                  <input
+                    id="user-photo-upload"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handlePhotoChange}
+                  />
+                )}
               </label>
             </div>
+            <p className="text-gray-500 text-[10px] mt-3 font-bold uppercase tracking-wider">Tap to change photo</p>
           </div>
 
           {/* Full Name */}

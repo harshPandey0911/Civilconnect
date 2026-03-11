@@ -170,6 +170,24 @@ const UserScrapPage = () => {
       setIsUploading(false);
     }
   };
+
+  const handleDelete = async (e, id) => {
+    e.stopPropagation(); // Prevent opening modal
+    if (!window.confirm('Are you sure you want to delete this listing?')) return;
+
+    try {
+      toast.loading('Deleting listing...', { id: 'delete-scrap' });
+      const res = await api.delete(`/scrap/${id}`);
+      if (res.data.success) {
+        toast.success('Listing deleted successfully', { id: 'delete-scrap' });
+        setSelectedScrap(null);
+        fetchMyScrap();
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || 'Failed to delete listing', { id: 'delete-scrap' });
+    }
+  };
   const getAddressComponent = (components, type) => {
     return components?.find(c => c.types.includes(type))?.long_name || '';
   };
@@ -323,6 +341,15 @@ const UserScrapPage = () => {
                       `}>
                         {item.status}
                       </div>
+                      {(item.status === 'pending' || item.status === 'cancelled') && (
+                        <button
+                          onClick={(e) => handleDelete(e, item._id)}
+                          className="p-2 ml-2 text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                          title="Delete Listing"
+                        >
+                          <FiTrash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -618,14 +645,22 @@ const UserScrapPage = () => {
                   </div>
                 </div>
 
-                {/* Footer Action */}
-                <div className="p-4 bg-gray-50/50 border-t border-gray-100">
+                <div className="p-4 bg-gray-50/50 border-t border-gray-100 flex gap-3">
                   <button
                     onClick={() => setSelectedScrap(null)}
-                    className="w-full py-4 bg-gray-900 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl active:scale-95 transition-all"
+                    className="flex-1 py-4 bg-gray-900 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl active:scale-95 transition-all"
                   >
                     Back to Listings
                   </button>
+                  {(selectedScrap.status === 'pending' || selectedScrap.status === 'cancelled') && (
+                    <button
+                      onClick={(e) => handleDelete(e, selectedScrap._id)}
+                      className="px-6 py-4 bg-red-50 text-red-600 border border-red-100 rounded-2xl font-black uppercase tracking-widest text-xs active:scale-95 transition-all flex items-center gap-2"
+                    >
+                      <FiTrash2 />
+                      Delete
+                    </button>
+                  )}
                 </div>
               </motion.div>
             </>
