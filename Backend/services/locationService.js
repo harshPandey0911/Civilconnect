@@ -212,13 +212,13 @@ const findNearbyVendors = async (centerLocation, radiusKm = 10, filters = {}) =>
 
     // Fallback: Use Haversine formula (slower but works without geo index)
     const vendors = await Vendor.find(baseQuery)
-      .select('name businessName phone address profilePhoto service rating isOnline availability settings');
+      .select('name businessName phone address location profilePhoto service rating isOnline availability settings');
 
     // Calculate distances and filter by radius
     nearbyVendors = vendors.map(vendor => {
       let distance = null;
 
-      // If vendor has coordinates in address or real-time location
+      // PRIORITY: Use real-time location (location) first, then registered address
       const vLat = vendor.location?.lat || vendor.address?.lat;
       const vLng = vendor.location?.lng || vendor.address?.lng;
 
@@ -233,11 +233,13 @@ const findNearbyVendors = async (centerLocation, radiusKm = 10, filters = {}) =>
       return {
         ...vendor.toObject(),
         distance: distance,
-        withinRange: distance !== null && distance <= vRange
+        withinRange: distance !== null && distance <= vRange,
+        isUsingCurrentLocation: !!vendor.location?.lat // Flag for debugging
       };
     }).filter(vendor => vendor.withinRange);
 
-    console.log(`[LocationService] Found ${nearbyVendors.length} vendors using Haversine (fallback)`);
+    const currentLocCount = nearbyVendors.filter(v => v.isUsingCurrentLocation).length;
+    console.log(`[LocationService] Found ${nearbyVendors.length} vendors (Online/Current: ${currentLocCount}) using Haversine`);
     return nearbyVendors;
   } catch (error) {
     console.error('Find nearby vendors error:', error);

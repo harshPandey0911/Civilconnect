@@ -438,37 +438,7 @@ const createBooking = async (req, res) => {
         }
 
         // Send notifications to Wave 1 vendors ONLY
-        const vendorNotifications = wave1Vendors.map(vendor =>
-          createNotification({
-            vendorId: vendor._id,
-            type: 'booking_request',
-            title: 'New Booking Request',
-            message: `New service request for ${serviceForBackground.title} from ${userForBackground.name}`,
-            relatedId: bookingForBackground._id,
-            relatedType: 'booking',
-            data: {
-              bookingId: bookingForBackground._id,
-              serviceName: serviceForBackground.title,
-              customerName: userForBackground.name,
-              customerPhone: userForBackground.phone,
-              scheduledDate: scheduledDate,
-              scheduledTime: scheduledTime,
-              location: address,
-              price: finalAmount, // Keep price for info
-              distance: vendor.distance // Distance in km
-            },
-            // Ensure proper push notification style for booking request
-            pushData: {
-              type: 'new_booking', // Triggers "Accept/Reject" buttons in SW
-              dataOnly: false,
-              link: `/vendor/bookings/${bookingForBackground._id}`
-            }
-          })
-        );
-
-        await Promise.all(vendorNotifications);
-
-        // Emit Socket.IO event to Wave 1 vendors for real-time notification with sound
+        // 1. Emit Socket.IO event FIRST (Instant & Reliable)
         const { getIO } = require('../../sockets');
         const io = getIO();
         if (io) {
@@ -484,14 +454,51 @@ const createBooking = async (req, res) => {
               scheduledDate: scheduledDate,
               scheduledTime: scheduledTime,
               price: finalAmount,
-              address: address, // Add this
+              address: address,
               distance: vendor.distance,
+              serviceCategory: bookingForBackground.serviceCategory,
+              brandName: bookingForBackground.brandName,
+              brandIcon: bookingForBackground.brandIcon,
+              categoryIcon: bookingForBackground.categoryIcon,
+              createdAt: bookingForBackground.createdAt,
+              expiresAt: new Date(new Date(bookingForBackground.createdAt).getTime() + (5 * 60 * 1000)).toISOString(),
               playSound: true,
               message: `New booking request within ${vendor.distance?.toFixed(1) || '?'}km!`
             });
           });
-        } else {
-          console.error('CRITICAL: Socket.IO instance NOT found on req.app!');
+        }
+
+        // 2. Send Firebase/FCM notifications (External service - call AFTER socket)
+        try {
+          const vendorNotifications = wave1Vendors.map(vendor =>
+            createNotification({
+              vendorId: vendor._id,
+              type: 'booking_request',
+              title: 'New Booking Request',
+              message: `New service request for ${serviceForBackground.title} from ${userForBackground.name}`,
+              relatedId: bookingForBackground._id,
+              relatedType: 'booking',
+              data: {
+                bookingId: bookingForBackground._id,
+                serviceName: serviceForBackground.title,
+                customerName: userForBackground.name,
+                customerPhone: userForBackground.phone,
+                scheduledDate: scheduledDate,
+                scheduledTime: scheduledTime,
+                location: address,
+                price: finalAmount,
+                distance: vendor.distance
+              },
+              pushData: {
+                type: 'new_booking',
+                dataOnly: false,
+                link: `/vendor/bookings/${bookingForBackground._id}`
+              }
+            })
+          );
+          await Promise.all(vendorNotifications);
+        } catch (notifError) {
+          console.error('[CreateBooking] Firebase/Notification Error (Non-blocking):', notifError.message);
         }
 
         // NOTIFY USER: Send actionable notification so they can track status
