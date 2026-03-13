@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { vendorTheme as themeColors } from '../../../../theme';
 import { playAlertRing, stopAlertRing } from '../../../../utils/notificationSound';
 
-const BookingAlertCard = ({ booking, onAccept, onReject, onAssign, maxSearchTimeMins = 5 }) => {
+const BookingAlertCard = ({ booking, onAccept, onReject, onAssign, maxSearchTimeMins = 1 }) => {
   // Calculate initial time synchronously instead of relying solely on useEffect
   const calculateInitialRemaining = () => {
     try {
@@ -29,7 +29,7 @@ const BookingAlertCard = ({ booking, onAccept, onReject, onAssign, maxSearchTime
 
       return initialDurationSecs;
     } catch {
-      return (Number(maxSearchTimeMins) || 5) * 60;
+      return (Number(maxSearchTimeMins) || 1) * 60;
     }
   };
 
@@ -155,8 +155,10 @@ const BookingAlertCard = ({ booking, onAccept, onReject, onAssign, maxSearchTime
               />
             </svg>
             <div className="text-center mt-0.5">
-              <span className={`text-xl font-black block leading-none ${timeLeft <= 10 ? 'text-red-500' : 'text-emerald-600'}`}>{timeLeft}</span>
-              <span className="text-[7px] font-bold text-gray-400 uppercase tracking-tighter block -mt-1">Sec</span>
+              <span className={`text-lg font-black block leading-none ${timeLeft <= 20 ? 'text-red-500' : 'text-emerald-600'}`}>
+                {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
+              </span>
+              <span className="text-[7px] font-bold text-gray-400 uppercase tracking-tighter block -mt-0.5">Mins Left</span>
             </div>
           </div>
         </div>
@@ -247,7 +249,7 @@ const BookingAlertCard = ({ booking, onAccept, onReject, onAssign, maxSearchTime
   );
 };
 
-const BookingAlertModal = ({ isOpen, booking, bookings, onAccept, onReject, onAssign, onMinimize, maxSearchTimeMins = 5 }) => {
+const BookingAlertModal = ({ isOpen, booking, bookings, onAccept, onReject, onAssign, onMinimize, maxSearchTimeMins = 1 }) => {
   const alertsArray = bookings || (booking ? [booking] : []);
 
   return (

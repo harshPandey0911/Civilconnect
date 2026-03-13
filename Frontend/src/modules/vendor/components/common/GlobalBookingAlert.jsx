@@ -11,7 +11,7 @@ export default function GlobalBookingAlert() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [maxSearchTime, setMaxSearchTime] = useState(5);
+  const [maxSearchTime, setMaxSearchTime] = useState(1);
 
   useEffect(() => {
     // Fetch global config for accurate timer
@@ -23,7 +23,7 @@ export default function GlobalBookingAlert() {
         const { vendorDashboardService } = await import('../../services/dashboardService');
         const response = await vendorDashboardService.getDashboardStats();
         if (response.success && response.data.config) {
-          setMaxSearchTime(response.data.config.maxSearchTime || 5);
+          setMaxSearchTime(response.data.config.maxSearchTime || 1);
         }
       } catch (error) {
         console.error('Failed to fetch config for GlobalAlert:', error);

@@ -460,8 +460,8 @@ const createBooking = async (req, res) => {
               brandName: bookingForBackground.brandName,
               brandIcon: bookingForBackground.brandIcon,
               categoryIcon: bookingForBackground.categoryIcon,
-              createdAt: bookingForBackground.createdAt,
-              expiresAt: new Date(new Date(bookingForBackground.createdAt).getTime() + (5 * 60 * 1000)).toISOString(),
+              createdAt: bookingForBackground.createdAt || new Date(),
+              expiresAt: new Date(new Date(bookingForBackground.createdAt || Date.now()).getTime() + (60 * 1000)).toISOString(),
               playSound: true,
               message: `New booking request within ${vendor.distance?.toFixed(1) || '?'}km!`
             });
