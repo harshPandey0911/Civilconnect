@@ -14,6 +14,25 @@ export default function GlobalBookingAlert() {
   const [maxSearchTime, setMaxSearchTime] = useState(1);
 
   useEffect(() => {
+    // 1. Initial Load: Check for existing pending jobs that haven't expired
+    const loadFromStorage = () => {
+      const pendingJobs = JSON.parse(localStorage.getItem('vendorPendingJobs') || '[]');
+      const now = Date.now();
+      
+      const validJobs = pendingJobs.filter(job => {
+        if (!job.expiresAt) return true;
+        return new Date(job.expiresAt).getTime() > now;
+      });
+
+      if (validJobs.length > 0) {
+        setActiveAlertBookings(prev => {
+          const existingIds = new Set(prev.map(b => String(b.id || b._id)));
+          const newJobs = validJobs.filter(v => !existingIds.has(String(v.id || v._id)));
+          return [...newJobs, ...prev];
+        });
+      }
+    };
+
     // Fetch global config for accurate timer
     const fetchConfig = async () => {
       const token = localStorage.getItem('vendorAccessToken') || sessionStorage.getItem('vendorAccessToken');
@@ -29,7 +48,12 @@ export default function GlobalBookingAlert() {
         console.error('Failed to fetch config for GlobalAlert:', error);
       }
     };
+
+    loadFromStorage();
     fetchConfig();
+
+    // 2. Heartbeat: sync every 5 seconds to catch missed events (critical for mobile)
+    const heartbeat = setInterval(loadFromStorage, 5000);
 
     // Listen for custom dashboard events from SocketContext
     const handleShowAlert = (e) => {
@@ -56,6 +80,7 @@ export default function GlobalBookingAlert() {
     return () => {
       window.removeEventListener('showDashboardBookingAlert', handleShowAlert);
       window.removeEventListener('removeVendorBooking', handleRemoveBooking);
+      clearInterval(heartbeat);
     };
   }, []);
 
