@@ -133,7 +133,7 @@ const VendorRoutes = () => {
       {!shouldHideBottomNav && <CashLimitModal />}
 
       {/* Global New Booking Alert Modal */}
-      <GlobalBookingAlert />
+      {!shouldHideBottomNav && <GlobalBookingAlert />}
     </ErrorBoundary>
   );
 };

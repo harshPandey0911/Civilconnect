@@ -23,7 +23,7 @@ const PromoCard = memo(({ title, subtitle, buttonText, image, onClick, className
         isVideo ? (
           <OptimizedVideo
             src={image}
-            className="w-full h-full object-fill"
+            className="w-full h-full object-cover"
             autoPlay
             loop
             muted
@@ -33,7 +33,7 @@ const PromoCard = memo(({ title, subtitle, buttonText, image, onClick, className
           <OptimizedImage
             src={image}
             alt={title || 'Promo'}
-            className="w-full h-full object-fill"
+            className="w-full h-full object-cover"
           />
         )
       ) : (

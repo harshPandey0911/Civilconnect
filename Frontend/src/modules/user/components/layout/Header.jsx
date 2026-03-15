@@ -1,4 +1,5 @@
 import React, { useRef, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { HiLocationMarker } from 'react-icons/hi';
 import { gsap } from 'gsap';
 import LocationSelector from '../common/LocationSelector';
@@ -30,12 +31,13 @@ const Header = ({ location, onLocationClick }) => {
           {/* Top Row: Logo (Left) and Location (Right) */}
           <div className="px-4 py-3 flex items-center justify-between">
             {/* Left: Logo */}
-            <div
+            <Link
+              to="/user"
               className="cursor-pointer shrink-0"
               onMouseEnter={() => {
                 if (logoRef.current) {
                   gsap.to(logoRef.current, {
-                    scale: 1.15,
+                    scale: 1.1,
                     filter: `drop-shadow(0 0 16px ${themeColors.brand.teal}40)`,
                     duration: 0.3,
                     ease: 'power2.out',
@@ -55,9 +57,18 @@ const Header = ({ location, onLocationClick }) => {
             >
               <Logo
                 ref={logoRef}
-                className="h-9 sm:h-10 w-auto"
+                className="h-9 sm:h-12 w-auto"
               />
-            </div>
+            </Link>
+
+            {/* Desktop Navigation - Hidden on Mobile */}
+            <nav className="hidden lg:flex items-center gap-8 ml-10">
+              <Link to="/user" className="text-gray-700 font-semibold hover:text-[#347989] transition-colors">Home</Link>
+              <Link to="/user/my-bookings" className="text-gray-700 font-semibold hover:text-[#347989] transition-colors">Bookings</Link>
+              <Link to="/user/scrap" className="text-gray-700 font-semibold hover:text-[#347989] transition-colors">Scrap</Link>
+              <Link to="/user/cart" className="text-gray-700 font-semibold hover:text-[#347989] transition-colors">Cart</Link>
+              <Link to="/user/account" className="text-gray-700 font-semibold hover:text-[#347989] transition-colors">Account</Link>
+            </nav>
 
             {/* Right: City & Location */}
             <div className="flex flex-col items-end gap-1 flex-1 min-w-0 ml-4">

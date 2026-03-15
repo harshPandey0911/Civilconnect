@@ -467,7 +467,7 @@ const Home = () => {
             location={address}
             onLocationClick={handleLocationClick}
           />
-          <div className="px-5 pb-5 pt-1 max-w-lg mx-auto w-full">
+          <div className="px-5 pb-5 pt-1 max-w-lg lg:max-w-2xl mx-auto w-full">
             <SearchBar onInputClick={() => setIsSearchOpen(true)} />
           </div>
         </motion.div>
