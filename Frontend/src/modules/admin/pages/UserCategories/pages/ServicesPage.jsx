@@ -367,19 +367,26 @@ const ServicesPage = ({ catalog, setCatalog, selectedCity }) => {
                           ? categories.find(c => String(c.id) === String(selectedCategoryFilter))?.title
                           : (brand.categoryIds && brand.categoryIds.length > 0
                             ? brand.categoryIds.map(cid => {
-                              const cIdStr = cid?._id || cid; // Handle populated ID if any
+                              const cIdStr = cid?.$oid || cid?._id || cid; // Handle populated ID if any
                               return categories.find(c => String(c.id) === String(cIdStr))?.title;
                             }).filter(Boolean).join(', ')
-                            : 'Uncategorized')
+                            : ((categories.find(c => {
+                                const brandCatIdStr = brand.categoryId?.$oid || brand.categoryId?._id || brand.categoryId;
+                                return String(c.id) === String(brandCatIdStr);
+                            })?.title) || 'Uncategorized')
+                          )
                       }>
                         {selectedCategoryFilter !== "all"
                           ? categories.find(c => String(c.id) === String(selectedCategoryFilter))?.title
                           : (brand.categoryIds && brand.categoryIds.length > 0
                             ? brand.categoryIds.map(cid => {
-                              const cIdStr = cid?._id || cid;
+                              const cIdStr = cid?.$oid || cid?._id || cid;
                               return categories.find(c => String(c.id) === String(cIdStr))?.title;
                             }).filter(Boolean).join(', ')
-                            : ((categories.find(c => String(c.id) === String(brand.categoryId))?.title) || 'Uncategorized')
+                            : ((categories.find(c => {
+                                const brandCatIdStr = brand.categoryId?.$oid || brand.categoryId?._id || brand.categoryId;
+                                return String(c.id) === String(brandCatIdStr);
+                            })?.title) || 'Uncategorized')
                           )
                         }
                       </div>
@@ -512,8 +519,14 @@ const ServicesPage = ({ catalog, setCatalog, selectedCity }) => {
             >
               <option value="">Select Category</option>
               {(() => {
-                const uniqueIds = new Set(activeBrand?.categoryIds || []);
-                if (activeBrand?.categoryId) uniqueIds.add(activeBrand.categoryId);
+                const uniqueIds = new Set();
+                (activeBrand?.categoryIds || []).forEach(cid => {
+                    const idStr = cid?.$oid || cid?._id || cid;
+                    if (idStr) uniqueIds.add(String(idStr));
+                });
+                
+                const activeBrandCatIdStr = activeBrand?.categoryId?.$oid || activeBrand?.categoryId?._id || activeBrand?.categoryId;
+                if (activeBrandCatIdStr) uniqueIds.add(String(activeBrandCatIdStr));
 
                 const validOptions = Array.from(uniqueIds).map(catId => {
                   const category = categories.find(c => String(c.id) === String(catId));

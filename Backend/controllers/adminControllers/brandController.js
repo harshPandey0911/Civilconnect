@@ -15,7 +15,13 @@ const getAllBrands = async (req, res) => {
     const query = {};
     if (status) query.status = status;
     if (categoryId) query.categoryIds = categoryId;
-    if (cityId) query.cityIds = cityId;
+    if (cityId) {
+      query.$or = [
+        { cityIds: cityId },
+        { cityIds: { $exists: false } },
+        { cityIds: { $size: 0 } }
+      ];
+    }
 
     const brands = await Brand.find(query)
       // .populate('categoryIds', 'title slug')
