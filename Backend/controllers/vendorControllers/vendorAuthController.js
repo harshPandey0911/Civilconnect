@@ -300,7 +300,6 @@ const register = async (req, res) => {
         document: panUrl 
       },
       otherDocuments: processedOtherDocs,
-      trainingScore: req.body.trainingScore || 0,
       approvalStatus: VENDOR_STATUS.PENDING,
       isActive: true, // Allow them to attempt login but blocked by PENDING status
       settings: { serviceRange: 15 }

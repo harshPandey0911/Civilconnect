@@ -227,11 +227,11 @@ const VendorSignup = () => {
           toast.success(
             <div className="flex flex-col">
               <span className="font-bold">Application Submitted!</span>
-              <span className="text-xs">Please complete the training module.</span>
+              <span className="text-xs">Your account is under review.</span>
             </div>,
             { icon: <FiCheckCircle className="text-[#D68F35]" />, duration: 5000 }
           );
-          navigate('/vendor/training');
+          navigate('/vendor/pending-approval');
         } else {
           toast.error(response.message || 'Registration failed');
         }
@@ -248,10 +248,7 @@ const VendorSignup = () => {
       if (response.success) {
         if (response.vendor?.adminApproval?.toLowerCase() === 'pending') {
           setIsLoading(false);
-          toast.error('Your account is currently under review. Please wait for admin approval.', {
-            duration: 5000,
-            icon: '⏳'
-          });
+          navigate('/vendor/pending-approval');
           return;
         }
 
@@ -322,35 +319,41 @@ const VendorSignup = () => {
       });
 
       if (response.success && response.isNewUser) {
-        setIsLoading(false);
-        toast.success('OTP Verified! Please complete the training module.');
-        
-        // Prepare registration data to be passed to Training page
-        const aadharDoc = formData.documents.find(d => d.type === 'aadhar')?.url || null;
-        const aadharBackDoc = formData.documents.find(d => d.type === 'aadharBack')?.url || null;
-        const panDoc = formData.documents.find(d => d.type === 'pan')?.url || null;
-        const otherDocs = formData.documents.filter(d => d.type === 'other').map(d => d.url);
+        // Step 3: Complete registration now that phone is verified
+        try {
+          const aadharDoc = formData.documents.find(d => d.type === 'aadhar')?.url || null;
+          const aadharBackDoc = formData.documents.find(d => d.type === 'aadharBack')?.url || null;
+          const panDoc = formData.documents.find(d => d.type === 'pan')?.url || null;
+          const otherDocs = formData.documents.filter(d => d.type === 'other').map(d => d.url);
 
-        const pendingRegisterData = {
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phoneNumber,
-          aadhar: formData.aadhar,
-          pan: formData.pan,
-          experience: formData.experience,
-          service: [], // Default empty
-          aadharDocument: aadharDoc,
-          aadharBackDocument: aadharBackDoc,
-          panDocument: panDoc,
-          otherDocuments: otherDocs,
-          verificationToken: response.verificationToken
-        };
+          const registerData = {
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phoneNumber,
+            aadhar: formData.aadhar,
+            pan: formData.pan,
+            experience: formData.experience,
+            service: [],
+            aadharDocument: aadharDoc,
+            aadharBackDocument: aadharBackDoc,
+            panDocument: panDoc,
+            otherDocuments: otherDocs,
+            verificationToken: response.verificationToken
+          };
 
-        // Store in sessionStorage as fallback
-        sessionStorage.setItem('pendingVendorRegistration', JSON.stringify(pendingRegisterData));
-        
-        // Navigate to training with data
-        navigate('/vendor/training', { state: { registerData: pendingRegisterData } });
+          const regResponse = await register(registerData);
+          
+          setIsLoading(false);
+          if (regResponse.success) {
+            toast.success('OTP Verified! Complete your police verification choice.');
+            navigate('/vendor/police-verification/selection', { state: { vendorId: regResponse.vendor.id } });
+          } else {
+            toast.error(regResponse.message || 'Registration failed');
+          }
+        } catch (regError) {
+          setIsLoading(false);
+          toast.error(regError.response?.data?.message || 'Registration failed after OTP verification');
+        }
       } else if (response.success && !response.isNewUser) {
         // This shouldn't happen if they came through signup flow with a new number,
         // but if they are already a vendor, they might be logged in now.

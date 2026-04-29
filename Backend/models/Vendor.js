@@ -36,6 +36,7 @@ const vendorSchema = new mongoose.Schema({
   },
   experience: {
     type: Number,
+    required: [true, 'Please provide years of experience'],
     default: 0
   },
   service: {
@@ -91,6 +92,34 @@ const vendorSchema = new mongoose.Schema({
   },
   rejectedReason: {
     type: String
+  },
+  policeVerification: {
+    method: {
+      type: String,
+      enum: ['self', 'admin', null],
+      default: null
+    },
+    status: {
+      type: String,
+      enum: ['pending', 'submitted', 'approved', 'rejected', 'expired'],
+      default: 'pending'
+    },
+    documentUrl: {
+      type: String,
+      default: null
+    },
+    requestedAt: {
+      type: Date,
+      default: null
+    },
+    expiryDate: {
+      type: Date,
+      default: null
+    },
+    submissionDate: {
+      type: Date,
+      default: null
+    }
   },
   profilePhoto: {
     type: String,
@@ -261,10 +290,6 @@ const vendorSchema = new mongoose.Schema({
   loginSessionId: {
     type: String,
     default: null
-  },
-  trainingScore: {
-    type: Number,
-    default: 0
   },
   performanceScore: {
     type: Number,

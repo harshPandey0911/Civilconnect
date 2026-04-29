@@ -40,7 +40,9 @@ const lazyLoad = (importFunc) => {
 // Lazy load vendor pages for code splitting
 const Login = lazyLoad(() => import('../pages/login'));
 const Signup = lazyLoad(() => import('../pages/signup'));
-const Training = lazyLoad(() => import('../pages/Training'));
+const PendingApproval = lazyLoad(() => import('../pages/PendingApproval'));
+const PoliceVerificationSelection = lazyLoad(() => import('../pages/PoliceVerification/Selection'));
+const PoliceVerificationUpload = lazyLoad(() => import('../pages/PoliceVerification/Upload'));
 const Dashboard = lazyLoad(() => import('../pages/Dashboard'));
 const BookingAlert = lazyLoad(() => import('../pages/BookingAlert'));
 const BookingAlerts = lazyLoad(() => import('../pages/BookingAlerts'));
@@ -81,7 +83,8 @@ const VendorRoutes = () => {
   // Check if current route should hide bottom nav (auth routes or map or booking alert)
   const shouldHideBottomNav = location.pathname === '/vendor/login' ||
     location.pathname === '/vendor/signup' ||
-    location.pathname === '/vendor/training' ||
+    location.pathname === '/vendor/pending-approval' ||
+    location.pathname.includes('/police-verification/') ||
     location.pathname.endsWith('/map') ||
     location.pathname.includes('/booking-alert/');
 
@@ -97,7 +100,9 @@ const VendorRoutes = () => {
               {/* Public routes */}
               <Route path="/login" element={<PublicRoute userType="vendor"><Login /></PublicRoute>} />
               <Route path="/signup" element={<PublicRoute userType="vendor"><Signup /></PublicRoute>} />
-              <Route path="/training" element={<PublicRoute userType="vendor"><Training /></PublicRoute>} />
+              <Route path="pending-approval" element={<PendingApproval />} />
+              <Route path="police-verification/selection" element={<PoliceVerificationSelection />} />
+              <Route path="police-verification/upload" element={<PoliceVerificationUpload />} />
 
               {/* Protected routes (auth required) */}
               <Route path="/" element={<ProtectedRoute userType="vendor"><Navigate to="dashboard" replace /></ProtectedRoute>} />

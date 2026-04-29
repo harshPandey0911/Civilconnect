@@ -19,6 +19,7 @@ import {
   FiStar,
   FiMessageSquare,
   FiPlayCircle,
+  FiShield,
   FiPercent,
 } from "react-icons/fi";
 import adminMenu from "../../config/adminMenu.json";
@@ -45,6 +46,7 @@ const iconMap = {
   Plans: FiPackage,
   Support: FiMessageSquare,
   Training: FiPlayCircle,
+  "Police Verification": FiShield,
   "Offer Banners": FiShoppingBag,
 };
 

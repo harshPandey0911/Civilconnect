@@ -43,7 +43,7 @@ const AllVendors = () => {
           },
           createdAt: vendor.createdAt,
           isActive: vendor.isActive,
-          trainingScore: vendor.trainingScore || 0,
+          experience: vendor.experience,
           rating: vendor.rating || 0,
           completedJobs: vendor.completedJobs || 0,
           totalJobs: vendor.totalJobs || 0,
@@ -254,7 +254,6 @@ const AllVendors = () => {
                 <tr className="border-b border-gray-100 bg-gray-50/50">
                   <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Vendor Details</th>
                   <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Business Info</th>
-                  <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Onboarding</th>
                   <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Performance</th>
                   <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</th>
                   <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Actions</th>
@@ -285,14 +284,6 @@ const AllVendors = () => {
                           <p className="text-[10px] text-blue-600 font-medium">
                             {Array.isArray(vendor.service) ? vendor.service.join(', ') : (vendor.service || 'No service')}
                           </p>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex flex-col gap-1">
-                          <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 text-[10px] font-bold border border-blue-100 w-fit">
-                            Score: {vendor.trainingScore}
-                          </span>
-                          <span className="text-[9px] text-gray-400 font-medium italic">Passed MCQ Test</span>
                         </div>
                       </td>
                       <td className="px-4 py-3">
@@ -412,6 +403,12 @@ const AllVendors = () => {
                 </div>
               </div>
               <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Years of Experience</label>
+                <div className="text-gray-900">
+                  {selectedVendor.experience || 0} Years
+                </div>
+              </div>
+              <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Status</label>
                 <div>{getStatusBadge(selectedVendor.approvalStatus)}</div>
               </div>
@@ -425,17 +422,6 @@ const AllVendors = () => {
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Active</label>
                 <div className={`text-sm font-semibold ${selectedVendor.isActive ? 'text-green-600' : 'text-red-600'}`}>
                   {selectedVendor.isActive ? 'Active' : 'Inactive'}
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Training Score</label>
-                <div className="flex items-center gap-2">
-                  <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-lg text-sm font-bold">
-                    {selectedVendor.trainingScore} points
-                  </span>
-                  <span className="text-xs text-green-600 font-bold flex items-center gap-1">
-                    <FiCheck /> PASSED
-                  </span>
                 </div>
               </div>
             </div>

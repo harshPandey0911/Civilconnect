@@ -69,10 +69,7 @@ const VendorLogin = () => {
       if (response.success) {
         // Speculative check: If backend sends vendor info at this stage
         if (response.vendor?.adminApproval?.toLowerCase() === 'pending') {
-          toast.error('Your account is currently under review. Please wait for admin approval.', {
-            duration: 5000,
-            icon: '⏳'
-          });
+          navigate('/vendor/pending-approval');
           return;
         }
 
@@ -145,14 +142,11 @@ const VendorLogin = () => {
         } else {
           // Check for admin approval status
           if (response.vendor?.adminApproval === 'PENDING' || response.vendor?.adminApproval === 'pending') {
-            toast.error('Your account is currently under review. Please wait for admin approval.', {
-              duration: 5000,
-              icon: '⏳'
-            });
             // Clear tokens if they were set by the service
             localStorage.removeItem('vendorAccessToken');
             localStorage.removeItem('vendorRefreshToken');
             localStorage.removeItem('vendorData');
+            navigate('/vendor/pending-approval');
             return;
           }
 

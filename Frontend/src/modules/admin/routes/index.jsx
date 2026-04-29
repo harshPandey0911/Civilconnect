@@ -23,7 +23,6 @@ const Payments = lazy(() => import('../pages/Payments'));
 const Reports = lazy(() => import('../pages/Reports'));
 const Notifications = lazy(() => import('../pages/Notifications'));
 const AdminSupport = lazy(() => import('../pages/Support/index'));
-const TrainingManagement = lazy(() => import('../pages/TrainingManagement'));
 const CommissionSettings = lazy(() => import('../pages/Commission'));
 const OfferBanners = lazy(() => import('../pages/OfferBanners'));
 
@@ -31,6 +30,7 @@ const Plans = lazy(() => import('../pages/Plans/Plans'));
 const Scrap = lazy(() => import('../pages/Scrap'));
 const Settlements = lazy(() => import('../pages/Settlements'));
 const Reviews = lazy(() => import('../pages/Reviews'));
+const PoliceVerificationManagement = lazy(() => import('../pages/Vendors/PoliceVerificationManagement'));
 
 
 
@@ -60,6 +60,7 @@ const AdminRoutes = () => {
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="users/*" element={<Users />} />
           <Route path="vendors/*" element={<Vendors />} />
+          <Route path="police-verification" element={<PoliceVerificationManagement />} />
           <Route path="workers/*" element={<Workers />} />
           <Route path="bookings" element={<Bookings />} />
           <Route path="bookings/tracking" element={<BookingTracking />} />
@@ -75,7 +76,6 @@ const AdminRoutes = () => {
           <Route path="commission" element={<CommissionSettings />} />
           <Route path="settings/*" element={<Settings />} />
           <Route path="support/*" element={<AdminSupport />} />
-          <Route path="training" element={<TrainingManagement />} />
           <Route path="offer-banners" element={<OfferBanners />} />
         </Route>
       </Routes>
