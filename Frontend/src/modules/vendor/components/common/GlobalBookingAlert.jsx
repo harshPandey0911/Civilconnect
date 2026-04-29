@@ -152,10 +152,17 @@ export default function GlobalBookingAlert() {
       isOpen={activeAlertBookings.length > 0}
       bookings={activeAlertBookings}
       maxSearchTimeMins={maxSearchTime}
-      onAccept={async (id) => {
+      onAccept={async (id, price, note) => {
         try {
-          await acceptBooking(id);
-          await assignWorker(id, 'SELF');
+          if (price) {
+            const { submitBid } = await import('../../services/bookingService');
+            await submitBid(id, price, note);
+            toast.success('Quote sent successfully!');
+          } else {
+            await acceptBooking(id);
+            await assignWorker(id, 'SELF');
+            toast.success('Job claimed successfully! Assigned to you.');
+          }
 
           // Remove from local storage
           const pendingJobs = JSON.parse(localStorage.getItem('vendorPendingJobs') || '[]');

@@ -19,7 +19,11 @@ const getPublicCategories = async (req, res) => {
     // Build query
     const query = { status: 'active' };
     if (cityId) {
-      query.cityIds = cityId;
+      query.$or = [
+        { cityIds: cityId },
+        { cityIds: { $exists: false } },
+        { cityIds: { $size: 0 } }
+      ];
     }
 
     const categories = await Category.find(query)
@@ -62,7 +66,13 @@ const getPublicBrands = async (req, res) => {
     // Build query
     const query = { status: 'active' };
     if (categoryId) query.categoryIds = categoryId;
-    if (cityId) query.cityIds = cityId;
+    if (cityId) {
+      query.$or = [
+        { cityIds: cityId },
+        { cityIds: { $exists: false } },
+        { cityIds: { $size: 0 } }
+      ];
+    }
 
     if (search) {
       const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -70,7 +80,7 @@ const getPublicBrands = async (req, res) => {
     }
 
     let brands = await Brand.find(query)
-      .select('title slug iconUrl logo imageUrl badge categoryIds basePrice discountPrice sections')
+      .select('title slug iconUrl logo imageUrl badge categoryIds basePrice discountPrice sections type')
       .sort({ createdAt: -1 })
       .lean();
 
@@ -109,7 +119,8 @@ const getPublicBrands = async (req, res) => {
         originalPrice: brand.discountPrice ? (brand.basePrice + brand.discountPrice) : (brand.basePrice || 0),
         categoryId: brand.categoryIds && brand.categoryIds.length > 0 ? brand.categoryIds[0].toString() : null,
         categoryIds: (brand.categoryIds || []).map(id => id.toString()),
-        sections: brand.sections || []
+        sections: brand.sections || [],
+        type: brand.type || 'service'
       }))
     });
   } catch (error) {
@@ -177,7 +188,8 @@ const getPublicBrandBySlug = async (req, res) => {
         reviews: "1k+", // Default reviews
         imageUrl: svc.iconUrl || brand.iconUrl || '',
         features: svc.description ? [svc.description] : [],
-        duration: "60 min" // Default duration
+        duration: "60 min", // Default duration
+        type: svc.type || 'service'
       }))
     };
 
@@ -204,7 +216,8 @@ const getPublicBrandBySlug = async (req, res) => {
         paymentOffers: [],
         paymentOffersEnabled: false
       },
-      sections: brandServices.length > 0 ? [servicesSection] : []
+      sections: brandServices.length > 0 ? [servicesSection] : [],
+      type: brand.type || 'service'
     };
 
     res.status(200).json({
@@ -267,7 +280,8 @@ const getPublicServices = async (req, res) => {
         description: svc.description,
         brandId: svc.brandId?._id,
         brandName: svc.brandId?.title,
-        brandIcon: svc.brandId?.iconUrl
+        brandIcon: svc.brandId?.iconUrl,
+        type: svc.type || 'service'
       }))
     });
   } catch (error) {
@@ -381,7 +395,14 @@ const getPublicHomeData = async (req, res) => {
 
     // Fetch both in parallel
     const [categoriesRes, homeContent] = await Promise.all([
-      Category.find({ status: 'active', cityIds: cityId ? cityId : { $exists: true } })
+      Category.find({ 
+        status: 'active', 
+        $or: cityId ? [
+          { cityIds: cityId },
+          { cityIds: { $exists: false } },
+          { cityIds: { $size: 0 } }
+        ] : [{ status: 'active' }]
+      })
         .select('title slug homeIconUrl homeBadge hasSaleBadge')
         .sort({ homeOrder: 1 })
         .lean(),

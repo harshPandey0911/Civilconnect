@@ -76,7 +76,7 @@ const createBooking = async (req, res) => {
 
     // 1. Parallel Fetching: Service and User
     const [service, user] = await Promise.all([
-      Service.findById(serviceId).select('title basePrice discountPrice description images iconUrl categoryId category categoryIds').lean(),
+      Service.findById(serviceId).select('title basePrice discountPrice description images iconUrl categoryId category categoryIds type').lean(),
       User.findById(userId).select('name phone wallet plans')
     ]);
 
@@ -290,6 +290,8 @@ const createBooking = async (req, res) => {
       brandIcon = formattedBookedItems[0].brandIcon || null;
     }
 
+    const isBiddingRequired = !!(finalCategory?.isBiddingEnabled || finalAmount === 0 || service.type === 'product');
+
     const booking = await Booking.create({
       bookingNumber,
       userId,
@@ -330,12 +332,10 @@ const createBooking = async (req, res) => {
         start: timeSlot.start,
         end: timeSlot.end
       },
-      // userNotes: userNotes || null, // Removed
-      // isPlusAdded: isPlusAdded || false, // Removed
-      paymentMethod: paymentMethod || null,
-      status: bookingStatus,
-      paymentStatus: bookingPaymentStatus
-      // notifiedVendors will be set after wave sorting
+      serviceType: service.type || 'service',
+      paymentMethod: isBiddingRequired ? 'bidding' : (paymentMethod || null),
+      status: isBiddingRequired ? BOOKING_STATUS.BIDDING : bookingStatus,
+      paymentStatus: isBiddingRequired ? PAYMENT_STATUS.PENDING : bookingPaymentStatus
     });
 
     // --- IMMEDIATE RESPONSE ---
@@ -462,6 +462,8 @@ const createBooking = async (req, res) => {
               categoryIcon: bookingForBackground.categoryIcon,
               createdAt: bookingForBackground.createdAt || new Date(),
               expiresAt: new Date(new Date(bookingForBackground.createdAt || Date.now()).getTime() + (60 * 1000)).toISOString(),
+              status: bookingForBackground.status,
+              serviceType: bookingForBackground.serviceType || 'service',
               playSound: true,
               message: `New booking request within ${vendor.distance?.toFixed(1) || '?'}km!`
             });

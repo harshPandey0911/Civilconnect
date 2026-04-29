@@ -63,23 +63,34 @@ const BookingAlert = () => {
     };
   }, [socket, id, navigate]);
 
-  const handleAccept = async () => {
+  const handleAccept = async (bookingId, price, note) => {
     try {
-      await acceptBooking(id);
-      await assignWorker(id, 'SELF');
+      const isBidding = booking.status?.toLowerCase() === 'bidding';
+      
+      if (isBidding) {
+        if (!price) {
+          toast.error('Please enter your price quote');
+          return;
+        }
+        const { submitBid } = await import('../../services/bookingService');
+        await submitBid(id, price, note);
+        toast.success('Your quote has been submitted!');
+      } else {
+        await acceptBooking(id);
+        await assignWorker(id, 'SELF');
+        toast.success('Booking accepted & assigned to you!');
+      }
 
       // Update local storage states
       const pendingJobs = JSON.parse(localStorage.getItem('vendorPendingJobs') || '[]');
-      const updatedPending = pendingJobs.filter(job => job.id !== id);
+      const updatedPending = pendingJobs.filter(job => String(job.id || job._id) !== String(id));
       localStorage.setItem('vendorPendingJobs', JSON.stringify(updatedPending));
 
       window.dispatchEvent(new Event('vendorJobsUpdated'));
-      toast.success('Booking accepted & assigned to you!');
       navigate('/vendor/dashboard', { replace: true });
     } catch (error) {
       console.error('Error accepting:', error);
-      toast.error('Failed to accept booking. It may have expired.');
-      navigate('/vendor/dashboard', { replace: true });
+      toast.error(error.response?.data?.message || 'Failed to process request.');
     }
   };
 

@@ -56,6 +56,22 @@ export const acceptBooking = async (bookingId) => {
 };
 
 /**
+ * Submit a bid for a booking
+ * @param {string} bookingId - Booking ID
+ * @param {number} price - Bid price
+ * @param {string} note - Optional note
+ */
+export const submitBid = async (bookingId, price, note) => {
+  try {
+    const response = await api.post('/bids/submit', { bookingId, price, note });
+    return response.data;
+  } catch (error) {
+    console.error('Error submitting bid:', error);
+    throw error;
+  }
+};
+
+/**
  * Reject a booking
  * @param {string} bookingId - Booking ID
  * @param {string} reason - Rejection reason

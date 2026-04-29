@@ -25,6 +25,7 @@ const getAllCategories = async (req, res) => {
 
     const categories = await Category.find(query)
       .select('-__v')
+      .populate('vendorId', 'name businessName')
       .sort({ homeOrder: 1, createdAt: -1 })
       .lean();
 
@@ -47,6 +48,8 @@ const getAllCategories = async (req, res) => {
         cityIds: cat.cityIds || [],
         metaTitle: cat.metaTitle,
         metaDescription: cat.metaDescription,
+        categoryType: cat.categoryType,
+        vendorId: cat.vendorId,
         createdAt: cat.createdAt,
         updatedAt: cat.updatedAt
       }))
@@ -94,6 +97,8 @@ const getCategoryById = async (req, res) => {
         isPopular: category.isPopular,
         metaTitle: category.metaTitle,
         metaDescription: category.metaDescription,
+        categoryType: category.categoryType,
+        vendorId: category.vendorId,
         createdAt: category.createdAt,
         updatedAt: category.updatedAt
       }
@@ -137,7 +142,8 @@ const createCategory = async (req, res) => {
       isPopular,
       metaTitle,
       metaDescription,
-      cityIds
+      cityIds,
+      categoryType
     } = req.body;
 
     console.log('Creating category with payload:', req.body);
@@ -200,6 +206,7 @@ const createCategory = async (req, res) => {
       metaTitle: metaTitle?.trim() || null,
       metaDescription: metaDescription?.trim() || null,
       cityIds: cityIds || [],
+      categoryType: categoryType || 'service',
       createdBy: req.user.id
     });
 
@@ -219,6 +226,7 @@ const createCategory = async (req, res) => {
         imageUrl: category.imageUrl,
         status: category.status,
         isPopular: category.isPopular,
+        categoryType: category.categoryType,
         createdAt: category.createdAt,
         updatedAt: category.updatedAt
       }
@@ -271,7 +279,8 @@ const updateCategory = async (req, res) => {
       isPopular,
       metaTitle,
       metaDescription,
-      cityIds: updateCityIds
+      cityIds: updateCityIds,
+      categoryType
     } = req.body;
 
     const category = await Category.findById(id);
@@ -331,6 +340,7 @@ const updateCategory = async (req, res) => {
     if (isPopular !== undefined) category.isPopular = Boolean(isPopular);
     if (metaTitle !== undefined) category.metaTitle = metaTitle?.trim() || null;
     if (metaDescription !== undefined) category.metaDescription = metaDescription?.trim() || null;
+    if (categoryType !== undefined) category.categoryType = categoryType;
 
     if (updateCityIds !== undefined) {
       category.cityIds = updateCityIds;
@@ -355,6 +365,8 @@ const updateCategory = async (req, res) => {
         imageUrl: category.imageUrl,
         status: category.status,
         isPopular: category.isPopular,
+        categoryType: category.categoryType,
+        vendorId: category.vendorId,
         createdAt: category.createdAt,
         updatedAt: category.updatedAt
       }

@@ -186,6 +186,9 @@ app.use('/api/vendors/workers', require('./routes/vendor-routes/worker.routes'))
 app.use('/api/vendors/fcm-tokens', require('./routes/vendor-routes/fcmToken.routes'));
 app.use('/api/vendors', require('./routes/vendor-routes/vendorBill.routes'));
 app.use('/api/vendors/catalog', require('./routes/vendor-routes/catalog.routes'));
+app.use('/api/vendors/categories', require('./routes/vendor-routes/category.routes'));
+app.use('/api/vendors/products', require('./routes/vendor-routes/product.routes'));
+app.use('/api/vendors/training', require('./routes/vendor-routes/training.routes'));
 app.use('/api/vendors/support', require('./routes/vendor-routes/support.routes'));
 app.use('/api/vendors/verification', require('./routes/vendor-routes/verification.routes'));
 
@@ -236,6 +239,9 @@ app.use('/api/bookings/cash', require('./routes/booking-routes/cashCollection.ro
 
 // Payment routes
 app.use('/api/payments', require('./routes/payment-routes/payment.routes'));
+
+// Bidding routes
+app.use('/api/bids', require('./routes/booking-routes/bid.routes'));
 
 // Notification routes
 app.use('/api/notifications', require('./routes/notification.routes'));

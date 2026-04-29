@@ -17,6 +17,7 @@ const categorySchema = z.object({
   homeBadge: z.string().optional(),
   hasSaleBadge: z.boolean(),
   showOnHome: z.boolean(),
+  categoryType: z.enum(["service", "product"]).default("service"),
 });
 
 const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
@@ -31,6 +32,7 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
     homeBadge: "",
     hasSaleBadge: false,
     showOnHome: true,
+    categoryType: "service",
   });
   const [uploadingIcon, setUploadingIcon] = useState(false);
   const [showReorderModal, setShowReorderModal] = useState(false);
@@ -62,6 +64,8 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
             homeBadge: cat.homeBadge || "",
             hasSaleBadge: cat.hasSaleBadge || false,
             showOnHome: cat.showOnHome !== false,
+            categoryType: cat.categoryType || "service",
+            vendorId: cat.vendorId || null,
           }));
 
           // Update catalog with fetched categories
@@ -89,6 +93,7 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
         homeBadge: "",
         hasSaleBadge: false,
         showOnHome: true,
+        categoryType: "service",
       });
       return;
     }
@@ -100,6 +105,7 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
       homeBadge: safe.homeBadge || "",
       hasSaleBadge: Boolean(safe.hasSaleBadge),
       showOnHome: safe.showOnHome !== false,
+      categoryType: safe.categoryType || "service",
     });
   }, [editing]);
 
@@ -114,6 +120,7 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
       homeBadge: "",
       hasSaleBadge: false,
       showOnHome: true,
+      categoryType: "service",
     });
     setIsModalOpen(false);
   };
@@ -128,7 +135,8 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
       homeIconUrl: form.homeIconUrl.trim(),
       homeBadge: form.homeBadge.trim(),
       hasSaleBadge: Boolean(form.hasSaleBadge),
-      showOnHome: Boolean(form.showOnHome)
+      showOnHome: Boolean(form.showOnHome),
+      categoryType: form.categoryType,
     });
 
     if (!validationResult.success) {
@@ -138,7 +146,7 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
       return;
     }
 
-    const { title, slug, homeIconUrl, homeBadge, hasSaleBadge, showOnHome } = validationResult.data;
+    const { title, slug, homeIconUrl, homeBadge, hasSaleBadge, showOnHome, categoryType } = validationResult.data;
 
     try {
       setLoading(true);
@@ -167,6 +175,7 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
         hasSaleBadge,
         showOnHome,
         homeOrder,
+        categoryType,
         cityIds: selectedCity ? [selectedCity] : [],
       };
 
@@ -200,6 +209,8 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
             hasSaleBadge: response.category.hasSaleBadge || false,
             showOnHome: response.category.showOnHome !== false,
             homeOrder: response.category.homeOrder || 0,
+            categoryType: response.category.categoryType || "service",
+            vendorId: response.category.vendorId || null,
           };
         } else {
           throw new Error(response.message || 'Failed to create category');
@@ -217,6 +228,8 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
             hasSaleBadge: response.category.hasSaleBadge || false,
             showOnHome: response.category.showOnHome !== false,
             homeOrder: response.category.homeOrder || 0,
+            categoryType: response.category.categoryType || "service",
+            vendorId: response.category.vendorId || null,
           };
         } else {
           throw new Error(response.message || 'Failed to update category');
@@ -234,6 +247,8 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
             hasSaleBadge: response.category.hasSaleBadge || false,
             showOnHome: response.category.showOnHome !== false,
             homeOrder: response.category.homeOrder || 0,
+            categoryType: response.category.categoryType || "service",
+            vendorId: response.category.vendorId || null,
           };
         } else {
           throw new Error(response.message || 'Failed to create category');
@@ -459,7 +474,7 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
                   <th className="text-left py-3 px-4 text-sm font-bold text-gray-700 w-12">#</th>
                   <th className="text-left py-3 px-4 text-sm font-bold text-gray-700 w-20">Icon</th>
                   <th className="text-left py-3 px-4 text-sm font-bold text-gray-700">Name</th>
-                  <th className="text-left py-3 px-4 text-sm font-bold text-gray-700">Slug</th>
+                  <th className="text-left py-3 px-4 text-sm font-bold text-gray-700">Type</th>
                   <th className="text-left py-3 px-4 text-sm font-bold text-gray-700">Badge</th>
                   <th className="text-center py-3 px-4 text-sm font-bold text-gray-700 w-20">
                     Order
@@ -489,10 +504,22 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
                       )}
                     </td>
                     <td className="py-4 px-4">
-                      <div className="font-bold text-gray-900">{c.title || "Untitled"}</div>
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-gray-900">{c.title || "Untitled"}</span>
+                          {c.vendorId && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-600 text-white shadow-sm" title={c.vendorId.name || 'Vendor'}>
+                              {c.vendorId.businessName || c.vendorId.name || 'Vendor Created'}
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">{c.slug || "—"}</div>
+                      </div>
                     </td>
                     <td className="py-4 px-4">
-                      <div className="text-sm text-gray-600">{c.slug || "—"}</div>
+                      <span className={`inline-block px-2 py-1 text-xs font-semibold rounded uppercase tracking-wider ${c.categoryType === 'product' ? 'bg-indigo-100 text-indigo-700' : 'bg-teal-100 text-teal-700'}`}>
+                        {c.categoryType || 'service'}
+                      </span>
                     </td>
                     <td className="py-4 px-4">
                       {c.homeBadge ? (
@@ -573,6 +600,17 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
               placeholder="e.g. Electricity, Salon for Women"
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
+          </div>
+          <div>
+            <label className="block text-base font-bold text-gray-900 mb-2">Category Type</label>
+            <select
+              value={form.categoryType}
+              onChange={(e) => setForm((p) => ({ ...p, categoryType: e.target.value }))}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+            >
+              <option value="service">Service (e.g. Salon, Electrician)</option>
+              <option value="product">Product (e.g. Tools, Materials)</option>
+            </select>
           </div>
           <div>
             <label className="block text-base font-bold text-gray-900 mb-2">Home Icon</label>

@@ -31,7 +31,7 @@ const getVendorBookings = async (req, res) => {
         { vendorId: vId, status: { $ne: BOOKING_STATUS.AWAITING_PAYMENT } },
         {
           vendorId: null,
-          status: { $in: [BOOKING_STATUS.REQUESTED, BOOKING_STATUS.SEARCHING] },
+          status: { $in: [BOOKING_STATUS.REQUESTED, BOOKING_STATUS.SEARCHING, BOOKING_STATUS.BIDDING] },
           serviceCategory: { $in: vendorCategories },
           'potentialVendors.vendorId': vId // Only show jobs where THIS vendor is within range
         }
@@ -168,7 +168,7 @@ const getBookingById = async (req, res) => {
       _id: id,
       $or: [
         { vendorId },
-        { vendorId: null, status: { $in: ['requested', 'searching'] } }
+        { vendorId: null, status: { $in: ['requested', 'searching', 'bidding'] } }
       ]
     })
       .populate('userId', 'name phone email profilePhoto')

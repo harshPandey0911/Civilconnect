@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useLayoutEffect, useCallback, useMemo, memo, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { FiBriefcase, FiUsers, FiBell, FiArrowRight, FiUser, FiClock, FiMapPin, FiCheckCircle, FiTrendingUp, FiChevronRight } from 'react-icons/fi';
+import { FiBriefcase, FiUsers, FiBell, FiArrowRight, FiUser, FiClock, FiMapPin, FiCheckCircle, FiTrendingUp, FiChevronRight, FiBox } from 'react-icons/fi';
 import { FaWallet } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import { vendorTheme as themeColors } from '../../../../theme';
@@ -388,12 +388,11 @@ const Dashboard = memo(() => {
       subtitle: `${stats.activeJobs} running`,
     },
     {
-      title: 'Manage Workers',
-      icon: FiUsers,
-      color: '#29ad81',
-      path: '/vendor/workers',
-      count: stats.workersOnline,
-      subtitle: `${stats.workersOnline} online`,
+      title: 'My Services',
+      icon: FiBox,
+      color: '#0ea5e9',
+      path: '/vendor/products',
+      subtitle: 'Manage Catalog',
     },
     {
       title: 'Wallet',
@@ -402,7 +401,7 @@ const Dashboard = memo(() => {
       path: '/vendor/wallet',
       subtitle: `₹${stats.totalEarnings.toLocaleString()} total`,
     },
-  ], [stats.activeJobs, stats.workersOnline, stats.totalEarnings]);
+  ], [stats.activeJobs, stats.totalEarnings]);
 
   const getStatusColor = (status) => {
     const s = String(status).toLowerCase();

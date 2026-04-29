@@ -16,6 +16,34 @@ const toAssetUrl = (url) => {
   return `${base}${clean.startsWith('/') ? '' : '/'}${clean}`;
 };
 
+const BrandCard = ({ brand, onClick }) => (
+  <div
+    onClick={() => onClick(brand)}
+    className="flex flex-col items-center cursor-pointer group active:scale-95 transition-all"
+  >
+    <div className="w-20 h-20 bg-gray-50 rounded-2xl flex items-center justify-center mb-2 group-hover:bg-gray-100 transition-colors shadow-sm overflow-hidden border border-gray-100 relative">
+      {brand.icon ? (
+        <img
+          src={toAssetUrl(brand.icon)}
+          alt={brand.title}
+          className="w-14 h-14 object-contain group-hover:scale-110 transition-transform"
+          loading="lazy"
+        />
+      ) : (
+        <FiLayers className="w-8 h-8 text-gray-300" />
+      )}
+      {brand.badge && (
+        <span className="absolute top-0 right-0 bg-purple-100 text-purple-700 text-[9px] font-bold px-1.5 py-0.5 rounded-bl-lg">
+          {brand.badge}
+        </span>
+      )}
+    </div>
+    <p className="text-[11px] font-bold text-gray-800 text-center leading-tight line-clamp-2 px-1">
+      {brand.title}
+    </p>
+  </div>
+);
+
 const CategoryModal = React.memo(({ isOpen, onClose, category, location, cartCount, currentCity }) => {
   const navigate = useNavigate();
   const { addToCart } = useCart();
@@ -253,35 +281,36 @@ const CategoryModal = React.memo(({ isOpen, onClose, category, location, cartCou
                       {view === 'brands' ? (
                         // Brands Grid
                         brands.length > 0 ? (
-                          <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
-                            {brands.map((brand) => (
-                              <div
-                                key={brand.id || brand._id}
-                                onClick={() => handleBrandClick(brand)}
-                                className="flex flex-col items-center cursor-pointer group active:scale-95 transition-all"
-                              >
-                                <div className="w-20 h-20 bg-gray-50 rounded-2xl flex items-center justify-center mb-2 group-hover:bg-gray-100 transition-colors shadow-sm overflow-hidden border border-gray-100 relative">
-                                  {brand.icon ? (
-                                    <img
-                                      src={toAssetUrl(brand.icon)}
-                                      alt={brand.title}
-                                      className="w-14 h-14 object-contain group-hover:scale-110 transition-transform"
-                                      loading="lazy"
-                                    />
-                                  ) : (
-                                    <FiLayers className="w-8 h-8 text-gray-300" />
-                                  )}
-                                  {brand.badge && (
-                                    <span className="absolute top-0 right-0 bg-purple-100 text-purple-700 text-[9px] font-bold px-1.5 py-0.5 rounded-bl-lg">
-                                      {brand.badge}
-                                    </span>
-                                  )}
+                          <div className="space-y-8">
+                            {/* Services Section */}
+                            {brands.filter(b => b.type === 'service').length > 0 && (
+                              <div>
+                                <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-teal-500" />
+                                  Available Services
+                                </h3>
+                                <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
+                                  {brands.filter(b => b.type === 'service').map((brand) => (
+                                    <BrandCard key={brand.id || brand._id} brand={brand} onClick={handleBrandClick} />
+                                  ))}
                                 </div>
-                                <p className="text-[11px] font-bold text-gray-800 text-center leading-tight line-clamp-2 px-1">
-                                  {brand.title}
-                                </p>
                               </div>
-                            ))}
+                            )}
+
+                            {/* Products Section */}
+                            {brands.filter(b => b.type === 'product').length > 0 && (
+                              <div>
+                                <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                                  Products & Materials
+                                </h3>
+                                <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
+                                  {brands.filter(b => b.type === 'product').map((brand) => (
+                                    <BrandCard key={brand.id || brand._id} brand={brand} onClick={handleBrandClick} />
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         ) : (
                           <div className="text-center py-12 text-gray-500">

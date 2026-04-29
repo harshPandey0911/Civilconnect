@@ -49,6 +49,7 @@ const BOOKING_STATUS = {
   IN_PROGRESS: 'in_progress',
   WORK_DONE: 'work_done',
   COMPLETED: 'completed',
+  BIDDING: 'bidding', // Open for bidding
   CANCELLED: 'cancelled',
   REJECTED: 'rejected'
 };
