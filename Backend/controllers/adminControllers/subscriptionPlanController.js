@@ -64,7 +64,7 @@ const SubscriptionTransaction = require('../../models/SubscriptionTransaction');
  */
 const getTransactions = async (req, res) => {
   try {
-    const { startDate, endDate } = req.query;
+    const { startDate, endDate, page = 1, limit = 10 } = req.query;
     let query = {};
 
     if (startDate || endDate) {
@@ -79,20 +79,34 @@ const getTransactions = async (req, res) => {
       }
     }
 
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
     const transactions = await SubscriptionTransaction.find(query)
       .populate('vendorId', 'businessName name phone')
       .populate('planId', 'name price duration')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
 
-    // Calculate total revenue
-    const totalRevenue = transactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
+    const totalTransactions = await SubscriptionTransaction.countDocuments(query);
+
+    // Calculate total revenue (of filtered results or all? Usually all for stats, but user might want filtered stats)
+    // To get accurate stats for the whole filtered range, we need another query or aggregation
+    const allFilteredTransactions = await SubscriptionTransaction.find(query);
+    const totalRevenue = allFilteredTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
 
     res.status(200).json({ 
       success: true, 
       data: transactions,
+      pagination: {
+        total: totalTransactions,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        pages: Math.ceil(totalTransactions / parseInt(limit))
+      },
       stats: {
         totalRevenue,
-        transactionCount: transactions.length
+        transactionCount: totalTransactions
       }
     });
   } catch (error) {

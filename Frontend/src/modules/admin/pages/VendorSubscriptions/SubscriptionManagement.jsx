@@ -1,15 +1,30 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { FiPlus, FiEdit2, FiTrash2, FiCheck, FiX, FiInfo } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 import vendorSubscriptionService from '../../services/vendorSubscriptionService';
 import { themeColors } from '../../../../theme';
 
 const VendorSubscriptionManagement = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState('plans'); // 'plans' or 'transactions'
+  
+  // Sync tab with URL
+  useEffect(() => {
+    const path = location.pathname.split('/').filter(Boolean).pop();
+    if (path === 'transactions') {
+      setActiveTab('transactions');
+    } else {
+      setActiveTab('plans');
+    }
+  }, [location.pathname]);
+
   const [plans, setPlans] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [stats, setStats] = useState({ totalRevenue: 0, transactionCount: 0 });
   const [dateRange, setDateRange] = useState({ startDate: '', endDate: '' });
+  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentPlan, setCurrentPlan] = useState(null);
@@ -28,7 +43,7 @@ const VendorSubscriptionManagement = () => {
     if (activeTab === 'plans') {
       fetchPlans();
     } else {
-      fetchTransactions();
+      fetchTransactions(1);
     }
   }, [activeTab, dateRange]);
 
@@ -46,10 +61,10 @@ const VendorSubscriptionManagement = () => {
     }
   };
 
-  const fetchTransactions = async () => {
+  const fetchTransactions = async (page = 1) => {
     setLoading(true);
     try {
-      const params = {};
+      const params = { page, limit: 10 };
       if (dateRange.startDate) params.startDate = dateRange.startDate;
       if (dateRange.endDate) params.endDate = dateRange.endDate;
 
@@ -59,11 +74,24 @@ const VendorSubscriptionManagement = () => {
         if (response.stats) {
           setStats(response.stats);
         }
+        if (response.pagination) {
+          setPagination({
+            page: response.pagination.page,
+            totalPages: response.pagination.pages,
+            total: response.pagination.total
+          });
+        }
       }
     } catch (error) {
       toast.error('Failed to fetch transactions');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= pagination.totalPages) {
+      fetchTransactions(newPage);
     }
   };
 
@@ -137,13 +165,13 @@ const VendorSubscriptionManagement = () => {
           </div>
           <div className="flex gap-2 bg-white p-1 rounded-xl border border-gray-200">
             <button
-              onClick={() => setActiveTab('plans')}
+              onClick={() => navigate('/admin/vendor-subscriptions/plans')}
               className={`px-6 py-2 rounded-lg font-semibold transition-all ${activeTab === 'plans' ? 'bg-[#347989] text-white shadow-md' : 'text-gray-600 hover:bg-gray-50'}`}
             >
               Plans
             </button>
             <button
-              onClick={() => setActiveTab('transactions')}
+              onClick={() => navigate('/admin/vendor-subscriptions/transactions')}
               className={`px-6 py-2 rounded-lg font-semibold transition-all ${activeTab === 'transactions' ? 'bg-[#347989] text-white shadow-md' : 'text-gray-600 hover:bg-gray-50'}`}
             >
               Transactions
@@ -195,8 +223,9 @@ const VendorSubscriptionManagement = () => {
         ) : null}
 
         {loading ? (
-          <div className="p-8 text-center bg-white rounded-3xl border border-gray-100 animate-pulse">
-            Loading data...
+          <div className="p-12 text-center bg-white rounded-3xl border border-gray-100 shadow-sm">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#347989] mx-auto mb-4"></div>
+            <p className="text-gray-500 font-medium">Fetching records...</p>
           </div>
         ) : activeTab === 'plans' ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -295,6 +324,65 @@ const VendorSubscriptionManagement = () => {
                 </tbody>
               </table>
             </div>
+
+            {/* Pagination Controls */}
+            {pagination.totalPages > 1 && (
+              <div className="p-6 border-t border-gray-50 bg-gray-50/30 flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div className="text-sm text-gray-500 font-medium">
+                  Showing <span className="text-gray-900">{((pagination.page - 1) * 10) + 1}</span> to <span className="text-gray-900">{Math.min(pagination.page * 10, pagination.total)}</span> of <span className="text-gray-900">{pagination.total}</span> records
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => handlePageChange(pagination.page - 1)}
+                    disabled={pagination.page === 1}
+                    className="px-4 py-2 text-sm font-bold rounded-xl border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  >
+                    Previous
+                  </button>
+                  
+                  {/* Page Numbers */}
+                  <div className="hidden sm:flex items-center gap-1 mx-2">
+                    {[...Array(pagination.totalPages)].map((_, i) => {
+                      const pageNum = i + 1;
+                      if (
+                        pagination.totalPages <= 7 ||
+                        pageNum === 1 ||
+                        pageNum === pagination.totalPages ||
+                        (pageNum >= pagination.page - 1 && pageNum <= pagination.page + 1)
+                      ) {
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => handlePageChange(pageNum)}
+                            className={`w-10 h-10 flex items-center justify-center rounded-xl font-bold transition-all ${
+                              pagination.page === pageNum
+                                ? 'bg-[#347989] text-white shadow-md'
+                                : 'text-gray-600 hover:bg-gray-100'
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      } else if (
+                        pageNum === pagination.page - 2 ||
+                        pageNum === pagination.page + 2
+                      ) {
+                        return <span key={pageNum} className="px-1 text-gray-400">...</span>;
+                      }
+                      return null;
+                    })}
+                  </div>
+
+                  <button
+                    onClick={() => handlePageChange(pagination.page + 1)}
+                    disabled={pagination.page === pagination.totalPages}
+                    className="px-4 py-2 text-sm font-bold rounded-xl border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
         {plans.length === 0 && (
