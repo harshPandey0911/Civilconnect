@@ -204,6 +204,9 @@ const BookingAlertCard = ({ booking, onAccept, onReject, onAssign, maxSearchTime
                 <div className="flex items-center gap-1.5 mt-1.5 opacity-80">
                   <span className="text-[9px] font-bold text-gray-500 uppercase">Brand:</span>
                   <span className="text-[10px] font-black text-gray-800 uppercase tracking-wider">{booking.brandName}</span>
+                  <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase ${booking.serviceType === 'product' ? 'bg-blue-100 text-blue-600' : 'bg-teal-100 text-teal-600'}`}>
+                    {booking.serviceType === 'product' ? 'Product' : 'Service'}
+                  </span>
                 </div>
               )}
             </div>
@@ -223,12 +226,47 @@ const BookingAlertCard = ({ booking, onAccept, onReject, onAssign, maxSearchTime
           </div>
         </div>
 
+        {/* Bidding Input Section */}
+        {booking.serviceType === 'product' && (booking.status?.toLowerCase() === 'bidding' || booking.bookingStatus?.toLowerCase() === 'bidding') && (
+          <div className="mb-5 space-y-3 p-3 bg-purple-50 rounded-2xl border border-purple-100 shadow-sm">
+            <div className="flex items-center gap-2 mb-1">
+              <FiDollarSign className="w-3.5 h-3.5 text-purple-600" />
+              <span className="text-[10px] font-black text-purple-700 uppercase tracking-widest">Enter Your Quote</span>
+            </div>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-purple-400 font-bold">₹</span>
+              <input
+                type="number"
+                placeholder="Total Price"
+                id={`price-input-${booking.id || booking._id}`}
+                className="w-full bg-white border border-purple-200 rounded-xl py-2.5 pl-7 pr-3 text-sm font-black text-purple-900 placeholder:text-purple-200 outline-none focus:ring-2 focus:ring-purple-400 transition-all"
+              />
+            </div>
+            <textarea
+              placeholder="Note to customer (optional)"
+              id={`note-input-${booking.id || booking._id}`}
+              className="w-full bg-white border border-purple-200 rounded-xl py-2 px-3 text-[11px] font-medium text-gray-600 placeholder:text-gray-300 outline-none min-h-[60px] resize-none"
+            />
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-2">
           <button
             disabled={!!loadingAction}
-            onClick={() => handleAction(onAccept, 'accept')}
-            className="w-full py-3 rounded-xl bg-gray-900 hover:bg-gray-800 text-white font-black text-sm shadow-md active:scale-95 transition-all flex items-center justify-center gap-2 col-span-2 disabled:opacity-50">
-            {loadingAction === 'accept' ? 'Accepting...' : 'Accept (Myself)'}
+            onClick={() => {
+              const isBidding = booking.serviceType === 'product' && (booking.status?.toLowerCase() === 'bidding' || booking.bookingStatus?.toLowerCase() === 'bidding');
+              if (isBidding) {
+                const price = document.getElementById(`price-input-${booking.id || booking._id}`).value;
+                const note = document.getElementById(`note-input-${booking.id || booking._id}`).value;
+                handleAction((id) => onAccept(id, price, note), 'accept');
+              } else {
+                handleAction(onAccept, 'accept');
+              }
+            }}
+            className={`w-full py-3 rounded-xl text-white font-black text-sm shadow-md active:scale-95 transition-all flex items-center justify-center gap-2 col-span-2 disabled:opacity-50 ${
+              (booking.serviceType === 'product' && (booking.status?.toLowerCase() === 'bidding' || booking.bookingStatus?.toLowerCase() === 'bidding')) ? 'bg-purple-600 hover:bg-purple-700' : 'bg-gray-900 hover:bg-gray-800'
+            }`}>
+            {loadingAction === 'accept' ? 'Processing...' : ((booking.serviceType === 'product' && (booking.status?.toLowerCase() === 'bidding' || booking.bookingStatus?.toLowerCase() === 'bidding')) ? 'Send Quote' : 'Accept (Myself)')}
           </button>
           <button
             disabled={!!loadingAction}

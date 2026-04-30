@@ -277,6 +277,8 @@ class BookingScheduler {
               categoryIcon: populatedBooking.categoryIcon,
               createdAt: populatedBooking.createdAt,
               expiresAt: new Date(new Date(populatedBooking.createdAt).getTime() + MAX_SEARCH_TIME_MS).toISOString(),
+              status: populatedBooking.status,
+              serviceType: populatedBooking.serviceType || 'service',
               playSound: true,
               message: `New booking request within ${v.distance?.toFixed(1) || '?'}km!`
             });

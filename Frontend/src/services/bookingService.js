@@ -54,6 +54,24 @@ export const bookingService = {
   getRatings: async (params = {}) => {
     const response = await api.get('/users/bookings/ratings', { params });
     return response.data;
+  },
+
+  // Get bids for a booking
+  getBids: async (bookingId) => {
+    const response = await api.get(`/bids/${bookingId}`);
+    return response.data;
+  },
+
+  // Accept a bid
+  acceptBid: async (bidId) => {
+    const response = await api.post(`/bids/accept/${bidId}`);
+    return response.data;
+  },
+  
+  // Reject a bid
+  rejectBid: async (bidId) => {
+    const response = await api.post(`/bids/reject/${bidId}`);
+    return response.data;
   }
 };
 

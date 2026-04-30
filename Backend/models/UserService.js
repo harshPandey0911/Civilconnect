@@ -21,6 +21,13 @@ const userServiceSchema = new mongoose.Schema({
     ref: 'Category',
     index: true
   },
+    vendorId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Vendor',
+    default: null,
+    index: true
+  },
+
   title: {
     type: String,
     required: [true, 'Please provide a service title'],
@@ -52,6 +59,11 @@ const userServiceSchema = new mongoose.Schema({
   description: {
     type: String,
     trim: true
+  },
+  type: {
+    type: String,
+    enum: ['service', 'product'],
+    default: 'service'
   }
 }, {
   timestamps: true

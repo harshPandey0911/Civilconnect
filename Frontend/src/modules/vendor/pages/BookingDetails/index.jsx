@@ -628,6 +628,58 @@ export default function BookingDetails() {
       <Header title="Booking Details" />
 
       <main className="px-4 py-6">
+        {/* Bidding Section */}
+        {booking.status?.toLowerCase() === 'bidding' && !booking.vendorId && (
+          <div className="bg-gradient-to-br from-purple-600 to-indigo-700 rounded-3xl p-6 mb-6 shadow-xl text-white relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16 blur-2xl"></div>
+            <h3 className="text-xl font-black mb-2">Submit Your Quote</h3>
+            <p className="text-sm text-purple-100 mb-6 font-medium">
+              This category requires bidding. Enter your best price to get hired.
+            </p>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-purple-200 mb-1">Your Price (₹)</label>
+                <div className="relative">
+                  <FiDollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-purple-300" />
+                  <input
+                    type="number"
+                    placeholder="Enter total price"
+                    className="w-full bg-white/10 border border-white/20 rounded-2xl py-4 pl-12 pr-4 text-white font-bold placeholder:text-white/40 focus:bg-white/20 focus:border-white/40 outline-none transition-all"
+                    id="bidPriceInput"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-purple-200 mb-1">Notes to Customer (Optional)</label>
+                <textarea
+                  placeholder="e.g. Price includes delivery"
+                  className="w-full bg-white/10 border border-white/20 rounded-2xl py-4 px-4 text-white font-medium placeholder:text-white/40 focus:bg-white/20 focus:border-white/40 outline-none transition-all min-h-[100px]"
+                  id="bidNoteInput"
+                />
+              </div>
+              <button
+                onClick={async () => {
+                  const price = document.getElementById('bidPriceInput').value;
+                  const note = document.getElementById('bidNoteInput').value;
+                  if (!price) return toast.error('Please enter a price');
+                  
+                  try {
+                    const { submitBid } = await import('../../services/bookingService');
+                    await submitBid(id, price, note);
+                    toast.success('Bid submitted successfully!');
+                    window.location.reload();
+                  } catch (err) {
+                    toast.error(err.response?.data?.message || 'Failed to submit bid');
+                  }
+                }}
+                className="w-full py-4 bg-white text-indigo-700 rounded-2xl font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all"
+              >
+                Send Quote
+              </button>
+            </div>
+          </div>
+        )}
         {/* Service Type Card */}
         <div
           className="bg-white rounded-xl p-4 mb-4 shadow-md"
@@ -1460,7 +1512,7 @@ export default function BookingDetails() {
             <FiArrowRight className="w-5 h-5" />
           </button>
 
-          {(booking.status === 'confirmed' || (booking.assignedTo && booking.workerResponse === 'rejected')) && (
+          {(booking.status === 'confirmed' || booking.status === 'accepted' || (booking.assignedTo && booking.workerResponse === 'rejected')) && (
             <div className="flex gap-3">
               <button
                 onClick={handleAssignToSelf}
@@ -1489,7 +1541,7 @@ export default function BookingDetails() {
           {/* Self-Job Operational Buttons */}
           {booking.assignedTo?.name === 'You (Self)' && (
             <div className="space-y-3 pt-2">
-              {(booking.status === 'confirmed' || booking.status === 'assigned') && (
+              {(booking.status === 'confirmed' || booking.status === 'accepted' || booking.status === 'assigned') && (
                 <button
                   onClick={handleStartJourney}
                   className="w-full py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg"

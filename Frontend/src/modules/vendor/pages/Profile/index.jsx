@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useLayoutEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiUser, FiEdit2, FiMapPin, FiPhone, FiMail, FiBriefcase, FiStar, FiArrowRight, FiSettings, FiChevronRight, FiCreditCard, FiLogOut, FiTrash2 } from 'react-icons/fi';
+import { FiUser, FiEdit2, FiMapPin, FiPhone, FiMail, FiBriefcase, FiStar, FiArrowRight, FiSettings, FiChevronRight, FiCreditCard, FiLogOut, FiTrash2, FiGrid, FiBox } from 'react-icons/fi';
 import { FaWallet } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
 import { vendorTheme as themeColors } from '../../../../theme';
@@ -23,10 +23,13 @@ const Profile = () => {
   const menuItems = [
     { id: 2, label: 'Wallet', icon: FaWallet, path: '/vendor/wallet' },
     { id: 5, label: 'My Ratings', icon: FiStar, path: '/vendor/my-ratings' },
-    { id: 10, label: 'My Services', icon: FiBriefcase, path: '/vendor/my-services' },
+    { id: 10, label: 'Manage Services', icon: FiBriefcase, path: '/vendor/products' },
+    { id: 11, label: 'Categories', icon: FiGrid, path: '/vendor/categories' },
+    { id: 12, label: 'Performance & Stats', icon: FiBox, path: '/vendor/my-services' },
     { id: 7, label: 'Manage Address', icon: FiMapPin, path: '/vendor/address-management' },
     { id: 8, label: 'Settings', icon: FiSettings, path: '/vendor/settings' },
     { id: 9, label: 'About Civil connect', icon: null, customIcon: 'S', path: '/vendor/about-cleaning-expert' },
+    { id: 13, label: 'Stock Management', icon: FiBox, path: '/vendor/stock' },
   ];
 
   const [profile, setProfile] = useState(null);

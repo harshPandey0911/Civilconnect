@@ -31,7 +31,7 @@ const getVendorBookings = async (req, res) => {
         { vendorId: vId, status: { $ne: BOOKING_STATUS.AWAITING_PAYMENT } },
         {
           vendorId: null,
-          status: { $in: [BOOKING_STATUS.REQUESTED, BOOKING_STATUS.SEARCHING] },
+          status: { $in: [BOOKING_STATUS.REQUESTED, BOOKING_STATUS.SEARCHING, BOOKING_STATUS.BIDDING] },
           serviceCategory: { $in: vendorCategories },
           'potentialVendors.vendorId': vId // Only show jobs where THIS vendor is within range
         }
@@ -168,7 +168,7 @@ const getBookingById = async (req, res) => {
       _id: id,
       $or: [
         { vendorId },
-        { vendorId: null, status: { $in: ['requested', 'searching'] } }
+        { vendorId: null, status: { $in: ['requested', 'searching', 'bidding'] } }
       ]
     })
       .populate('userId', 'name phone email profilePhoto')
@@ -1052,10 +1052,8 @@ const completeSelfJob = async (req, res) => {
     // If it's an online job, we credit GROSS (100%) and deduct at withdrawal as requested.
     const isOnlineJob = booking.paymentMethod === 'online' || booking.paymentMethod === 'Qr online';
     
-    // Get Dynamic Commission from Settings based on Vendor Level
-    const vendorLevel = vendor?.level || 3;
-    const levelKey = `level${vendorLevel}`;
-    const dynamicCommission = settings?.commissionRates?.[levelKey] || vendor?.commissionRate || 15;
+    // Get Dynamic Commission from Settings based on Vendor Level (DISABLED: Commission removed)
+    const dynamicCommission = 0;
     
     const serviceSplitPct = isOnlineJob ? 100 : (100 - dynamicCommission);
     const partsSplitPct = settings?.partsPayoutPercentage ?? 10;
@@ -1068,7 +1066,8 @@ const completeSelfJob = async (req, res) => {
 
     // -- Original booking service (from basePrice) --
     const originalBase = Number(booking.basePrice) || 0;
-    const originalGST = parseFloat(((originalBase * serviceGstPct) / 100).toFixed(2));
+    // Use stored tax from booking to ensure 100% consistency with initial quote
+    const originalGST = Number(booking.tax) || parseFloat(((originalBase * serviceGstPct) / 100).toFixed(2));
 
     // -- Vendor-added services --
     const billServices = (billDetails?.services || []).map(svc => {

@@ -269,6 +269,8 @@ export const SocketProvider = ({ children }) => {
             time: data.scheduledTime
           },
           status: 'requested',
+          bookingStatus: data.status,
+          serviceType: data.serviceType || 'service',
           createdAt: data.createdAt || new Date().toISOString(),
           expiresAt: data.expiresAt
         };
@@ -347,9 +349,21 @@ export const SocketProvider = ({ children }) => {
         window.dispatchEvent(new Event('vendorStatsUpdated'));
       });
     }
+    // Listen for New Bid Received (User Side)
+    if (userType === 'user') {
+      newSocket.on('new_bid_received', (data) => {
+        // console.log('🎁 New Bid Received:', data);
+        
+        // Play notification sound
+        if (isSoundEnabled('user')) playNotificationSound();
 
-    // Listen for special Worker Job Assignments
-    if (userType === 'worker') {
+        // Show global event for Bid Alert
+        const event = new CustomEvent('showUserBidAlert', { detail: data });
+        window.dispatchEvent(event);
+      });
+    }
+     // Listen for special Worker Job Assignments
+     if (userType === 'worker') {
       newSocket.on('new_job_assigned', (data) => {
         // Play urgent alert ring
         playAlertRing();

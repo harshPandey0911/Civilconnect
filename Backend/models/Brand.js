@@ -84,6 +84,17 @@ const brandSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Admin',
     default: null
+  },
+  vendorId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Vendor',
+    default: null,
+    index: true
+  },
+  type: {
+    type: String,
+    enum: ['service', 'product'],
+    default: 'service'
   }
 }, {
   timestamps: true

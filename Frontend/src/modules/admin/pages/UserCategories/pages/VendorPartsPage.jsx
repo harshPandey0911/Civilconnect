@@ -202,7 +202,16 @@ const VendorPartsPage = () => {
                       )}
                     </td>
                     <td className="p-3 font-medium text-xs text-gray-500">{s.hsnCode || "—"}</td>
-                    <td className="p-3 font-medium">{s.name}</td>
+                    <td className="p-3 font-medium">
+                      <div className="flex flex-col">
+                        <span>{s.name}</span>
+                        {s.isVendorCreated && s.vendorId && (
+                          <span className="text-[10px] text-purple-600 font-bold uppercase mt-1">
+                            Added by: {s.vendorId.businessName || s.vendorId.name || 'Vendor'}
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="p-3">₹{s.basePrice || s.price}</td>
                     <td className="p-3 text-sm text-gray-600 truncate max-w-xs">{s.description || "—"}</td>
                     <td className="p-3 text-right flex justify-end gap-2">

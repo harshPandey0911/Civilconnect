@@ -212,6 +212,7 @@ const BookingDetails = () => {
   const getStatusIcon = (status) => {
     switch (status) {
       case 'confirmed':
+      case 'accepted':
         return <FiCheckCircle className="w-5 h-5 text-green-500" />;
       case 'in_progress':
       case 'journey_started':
@@ -228,6 +229,8 @@ const BookingDetails = () => {
       case 'requested':
       case 'searching':
         return <FiSearch className="w-5 h-5 text-amber-500 animate-pulse" />;
+      case 'bidding':
+        return <FiDollarSign className="w-5 h-5 text-purple-500 animate-bounce" />;
       default:
         return <FiClock className="w-5 h-5 text-gray-500" />;
     }
@@ -236,6 +239,7 @@ const BookingDetails = () => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'confirmed':
+      case 'accepted':
         return 'bg-green-50 text-green-700 border-green-200';
       case 'in_progress':
       case 'journey_started':
@@ -252,6 +256,8 @@ const BookingDetails = () => {
       case 'requested':
       case 'searching':
         return 'bg-amber-50 text-amber-700 border-amber-200';
+      case 'bidding':
+        return 'bg-purple-50 text-purple-700 border-purple-200';
       default:
         return 'bg-gray-50 text-gray-700 border-gray-200';
     }
@@ -259,7 +265,8 @@ const BookingDetails = () => {
 
   const getStatusLabel = (status) => {
     switch (status) {
-      case 'confirmed': return 'Confirmed';
+      case 'confirmed':
+      case 'accepted': return 'Confirmed';
       case 'journey_started': return 'Agent En Route';
       case 'visited': return 'Agent Arrived';
       case 'in_progress': return 'In Progress';
@@ -268,6 +275,7 @@ const BookingDetails = () => {
       case 'cancelled': return 'Cancelled';
       case 'requested':
       case 'searching': return 'Finding Expert';
+      case 'bidding': return 'Bidding in Progress';
       default: return status?.replace('_', ' ') || 'Pending';
     }
   };
@@ -634,7 +642,7 @@ const BookingDetails = () => {
               <div className="flex justify-between relative z-10">
                 {/* Step 1: Booked */}
                 <div className="flex flex-col items-center gap-2 w-1/4">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${['pending', 'requested', 'searching', 'confirmed', 'assigned', 'journey_started', 'visited', 'in_progress', 'work_done', 'completed'].includes(booking.status?.toLowerCase())
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${['pending', 'requested', 'searching', 'bidding', 'accepted', 'confirmed', 'assigned', 'journey_started', 'visited', 'in_progress', 'work_done', 'completed'].includes(booking.status?.toLowerCase())
                     ? 'bg-teal-600 text-white shadow-lg shadow-teal-200' : 'bg-gray-100 text-gray-400'
                     }`}>
                     <FiCheckCircle className="w-4 h-4" />
@@ -644,7 +652,7 @@ const BookingDetails = () => {
 
                 {/* Step 2: Assigned */}
                 <div className="flex flex-col items-center gap-2 w-1/4">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${['assigned', 'journey_started', 'visited', 'in_progress', 'work_done', 'completed'].includes(booking.status?.toLowerCase())
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${['accepted', 'confirmed', 'assigned', 'journey_started', 'visited', 'in_progress', 'work_done', 'completed'].includes(booking.status?.toLowerCase())
                     ? 'bg-teal-600 text-white shadow-lg shadow-teal-200' : 'bg-gray-100 text-gray-400'
                     }`}>
                     2
@@ -678,7 +686,7 @@ const BookingDetails = () => {
                   width:
                     ['work_done', 'completed'].includes(booking.status?.toLowerCase()) ? '100%' :
                       ['journey_started', 'visited', 'in_progress'].includes(booking.status?.toLowerCase()) ? '66%' :
-                        ['assigned'].includes(booking.status?.toLowerCase()) ? '33%' : '0%'
+                        ['accepted', 'confirmed', 'assigned'].includes(booking.status?.toLowerCase()) ? '33%' : '0%'
                 }}></div>
               </div>
             </div>
@@ -693,7 +701,7 @@ const BookingDetails = () => {
           </div>
 
           {/* Broadcast/Searching State Card */}
-          {!booking.workerId && !booking.assignedTo && ['requested', 'searching'].includes(booking.status?.toLowerCase()) && (
+          {!booking.workerId && !booking.assignedTo && ['requested', 'searching', 'bidding'].includes(booking.status?.toLowerCase()) && (
             <div className="bg-white rounded-3xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-amber-100 relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-32 h-32 bg-amber-50 rounded-full -translate-y-16 translate-x-16 blur-3xl opacity-50 group-hover:opacity-80 transition-opacity"></div>
 
@@ -704,26 +712,42 @@ const BookingDetails = () => {
                   </div>
                   <div>
                     <h3 className="text-lg font-black text-gray-900 leading-tight">Finding Your Expert</h3>
-                    <p className="text-[10px] font-bold text-amber-600 uppercase tracking-widest">Broadcast in Progress</p>
+                    <p className="text-[10px] font-bold text-amber-600 uppercase tracking-widest">
+                      {booking.status?.toLowerCase() === 'bidding' ? 'Accepting Quotes' : 'Broadcast in Progress'}
+                    </p>
                   </div>
                 </div>
 
                 <p className="text-sm text-gray-600 mb-4 leading-relaxed font-medium">
-                  We've sent your request to all verified experts in your area. You'll be notified automatically as soon as someone accepts.
+                  {booking.status?.toLowerCase() === 'bidding' 
+                    ? "Vendors are now submitting their best prices for your request. View the quotes below and pick the best one!"
+                    : "We've sent your request to all verified experts in your area. You'll be notified automatically as soon as someone accepts."}
                 </p>
 
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center gap-2 text-xs text-gray-400 bg-gray-50 rounded-xl p-3 border border-gray-100">
                     <span className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-ping"></span>
-                    <span>Waiting for response from 12+ nearby partners...</span>
+                    <span>Waiting for quotes from nearby partners...</span>
                   </div>
                 </div>
               </div>
             </div>
           )}
 
+          {/* Bids List Section */}
+          {booking.status?.toLowerCase() === 'bidding' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between px-2">
+                <h3 className="text-sm font-black uppercase tracking-widest text-gray-400">Quotes Received</h3>
+                <span className="bg-indigo-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full">LIVE</span>
+              </div>
+              
+              <BidsList bookingId={id} onAccept={() => loadBooking()} />
+            </div>
+          )}
+
           {/* Service Partner Card */}
-          {(booking.workerId || booking.assignedTo || booking.vendorId) && ['confirmed', 'assigned', 'journey_started', 'visited', 'in_progress', 'work_done'].includes(booking.status?.toLowerCase()) && (
+          {(booking.workerId || booking.assignedTo || booking.vendorId) && ['accepted', 'confirmed', 'assigned', 'journey_started', 'visited', 'in_progress', 'work_done'].includes(booking.status?.toLowerCase()) && (
             <div className="bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 transition-all hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)]">
               <div className="flex justify-between items-start mb-4">
                 {['journey_started', 'visited', 'in_progress'].includes(booking.status?.toLowerCase()) ? (
@@ -1529,4 +1553,102 @@ const BookingDetails = () => {
 };
 
 export default BookingDetails;
+
+// --- Sub-components ---
+
+const BidsList = ({ bookingId, onAccept }) => {
+  const [bids, setBids] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [acceptingId, setAcceptingId] = useState(null);
+
+  const loadBids = async () => {
+    try {
+      const { bookingService } = await import('../../../../services/bookingService');
+      const response = await bookingService.getBids(bookingId);
+      if (response.success) {
+        setBids(response.bids || []);
+      }
+    } catch (error) {
+      console.error('Failed to load bids:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadBids();
+    // Refresh every 10 seconds or use socket
+    const interval = setInterval(loadBids, 10000);
+    return () => clearInterval(interval);
+  }, [bookingId]);
+
+  const handleAccept = async (bidId) => {
+    if (!window.confirm('Are you sure you want to accept this quote?')) return;
+    
+    setAcceptingId(bidId);
+    try {
+      const { bookingService } = await import('../../../../services/bookingService');
+      const response = await bookingService.acceptBid(bidId);
+      if (response.success) {
+        toast.success('Quote accepted! Your booking is confirmed.');
+        onAccept();
+      }
+    } catch (error) {
+      toast.error('Failed to accept quote');
+    } finally {
+      setAcceptingId(null);
+    }
+  };
+
+  if (loading) return <div className="text-center py-4 text-gray-400 font-bold text-xs">Fetching quotes...</div>;
+  if (bids.length === 0) return (
+    <div className="bg-gray-50 rounded-3xl p-8 border border-gray-100 text-center">
+      <FiLoader className="w-8 h-8 text-indigo-200 mx-auto mb-3 animate-spin" />
+      <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Waiting for vendors to quote...</p>
+    </div>
+  );
+
+  return (
+    <div className="space-y-4">
+      {bids.map(bid => (
+        <div key={bid._id} className="bg-white rounded-3xl p-5 shadow-[0_4px_20px_rgb(0,0,0,0.02)] border border-gray-100 flex items-center gap-4 transition-all hover:shadow-lg">
+          <div className="w-14 h-14 rounded-full overflow-hidden bg-gray-50 border-2 border-indigo-50 shrink-0">
+            {bid.vendorId?.profilePicture ? (
+              <img src={bid.vendorId.profilePicture} alt={bid.vendorId.name} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-indigo-200">
+                <FiUser className="w-6 h-6" />
+              </div>
+            )}
+          </div>
+          
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-0.5">
+              <h4 className="font-black text-gray-900 truncate">{bid.vendorId?.businessName || bid.vendorId?.name}</h4>
+              <div className="flex items-center gap-0.5 text-xs font-black text-yellow-500 bg-yellow-50 px-1.5 py-0.5 rounded-md">
+                <FiStar className="w-2.5 h-2.5 fill-current" />
+                <span>{bid.vendorId?.rating || '4.5'}</span>
+              </div>
+            </div>
+            {bid.note && <p className="text-[10px] text-gray-500 font-medium truncate mb-2">"{bid.note}"</p>}
+            <div className="flex items-center gap-2">
+              <span className="text-lg font-black text-indigo-600">₹{bid.price}</span>
+              <span className="text-[9px] text-gray-400 font-bold uppercase tracking-tighter">Total Price</span>
+            </div>
+          </div>
+
+          <button
+            onClick={() => handleAccept(bid._id)}
+            disabled={acceptingId !== null}
+            className={`px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 ${
+              acceptingId === bid._id ? 'bg-gray-100 text-gray-400' : 'bg-indigo-600 text-white shadow-lg shadow-indigo-100'
+            }`}
+          >
+            {acceptingId === bid._id ? 'Wait...' : 'Accept'}
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+};
 

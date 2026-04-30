@@ -19,6 +19,12 @@ const categorySchema = new mongoose.Schema({
     unique: true,
     lowercase: true
   },
+  categoryType: {
+    type: String,
+    enum: ['service', 'product'],
+    default: 'service',
+    index: true
+  },
   homeIconUrl: {
     type: String,
     default: null
@@ -36,6 +42,10 @@ const categorySchema = new mongoose.Schema({
     type: Boolean,
     default: true,
     index: true
+  },
+  isBiddingEnabled: {
+    type: Boolean,
+    default: false
   },
   homeOrder: {
     type: Number,
@@ -80,6 +90,12 @@ const categorySchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Admin',
     default: null
+  },
+  vendorId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Vendor',
+    default: null,
+    index: true
   }
 }, {
   timestamps: true

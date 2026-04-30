@@ -92,6 +92,11 @@ const bookingSchema = new mongoose.Schema({
   serviceImages: [{
     type: String
   }],
+  serviceType: {
+    type: String,
+    enum: ['service', 'product'],
+    default: 'service'
+  },
   // Booked Items (Brand > Card snapshot)
   bookedItems: [{
     brandName: { type: String, default: '' },

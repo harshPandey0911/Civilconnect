@@ -1,5 +1,6 @@
 const VendorServiceCatalog = require('../../models/VendorServiceCatalog');
 const VendorPartsCatalog = require('../../models/VendorPartsCatalog');
+const Brand = require('../../models/Brand');
 const { validationResult } = require('express-validator');
 const { SERVICE_STATUS } = require('../../utils/constants');
 
@@ -9,11 +10,32 @@ const { SERVICE_STATUS } = require('../../utils/constants');
  */
 const getAllVendorServices = async (req, res) => {
   try {
-    const services = await VendorServiceCatalog.find()
-      .populate('categoryId', 'title')
-      .sort({ createdAt: -1 });
+    const [globalServices, vendorBrands] = await Promise.all([
+      VendorServiceCatalog.find()
+        .populate('categoryId', 'title')
+        .sort({ createdAt: -1 }),
+      Brand.find({ vendorId: { $exists: true }, type: 'service' })
+        .populate('categoryId', 'title')
+        .populate('vendorId', 'name businessName')
+        .sort({ createdAt: -1 })
+    ]);
+
+    // Format vendor brands to match service schema
+    const formattedVendorServices = vendorBrands.map(b => ({
+      _id: b._id,
+      name: b.title,
+      price: b.basePrice,
+      status: b.status,
+      description: b.description,
+      categoryId: b.categoryId,
+      vendorId: b.vendorId,
+      isVendorCreated: true
+    }));
+
+    const services = [...globalServices, ...formattedVendorServices];
     res.status(200).json({ success: true, count: services.length, services });
   } catch (error) {
+    console.error('Get vendor services error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch vendor services' });
   }
 };
@@ -68,9 +90,28 @@ const updateVendorService = async (req, res) => {
  */
 const deleteVendorService = async (req, res) => {
   try {
-    await VendorServiceCatalog.findByIdAndDelete(req.params.id);
-    res.status(200).json({ success: true, message: 'Service deleted' });
+    const id = req.params.id;
+    // 1. Try deleting from Global Catalog
+    const deletedGlobal = await VendorServiceCatalog.findByIdAndDelete(id);
+    if (deletedGlobal) {
+      return res.status(200).json({ success: true, message: 'Global service deleted' });
+    }
+
+    // 2. Try deleting from Vendor created Brands/Services
+    const Brand = require('../../models/Brand');
+    const UserService = require('../../models/UserService');
+
+    // Delete Brand first
+    const deletedBrand = await Brand.findByIdAndDelete(id);
+    if (deletedBrand) {
+      // Also delete associated services under this brand
+      await UserService.deleteMany({ brandId: id });
+      return res.status(200).json({ success: true, message: 'Vendor service/brand deleted' });
+    }
+
+    res.status(404).json({ success: false, message: 'Service not found' });
   } catch (error) {
+    console.error('Delete vendor service error:', error);
     res.status(500).json({ success: false, message: 'Failed to delete vendor service' });
   }
 };
@@ -81,11 +122,33 @@ const deleteVendorService = async (req, res) => {
  */
 const getAllVendorParts = async (req, res) => {
   try {
-    const parts = await VendorPartsCatalog.find()
-      .populate('categoryId', 'title')
-      .sort({ createdAt: -1 });
+    const [globalParts, vendorBrands] = await Promise.all([
+      VendorPartsCatalog.find()
+        .populate('categoryId', 'title')
+        .sort({ createdAt: -1 }),
+      Brand.find({ vendorId: { $exists: true }, type: 'product' })
+        .populate('categoryId', 'title')
+        .populate('vendorId', 'name businessName')
+        .sort({ createdAt: -1 })
+    ]);
+
+    // Format vendor brands to match parts schema
+    const formattedVendorParts = vendorBrands.map(b => ({
+      _id: b._id,
+      name: b.title,
+      price: b.basePrice,
+      status: b.status,
+      description: b.description,
+      categoryId: b.categoryId,
+      vendorId: b.vendorId,
+      isVendorCreated: true,
+      hsnCode: b.hsnCode || ''
+    }));
+
+    const parts = [...globalParts, ...formattedVendorParts];
     res.status(200).json({ success: true, count: parts.length, parts });
   } catch (error) {
+    console.error('Get vendor parts error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch vendor parts' });
   }
 };
@@ -145,9 +208,28 @@ const updateVendorPart = async (req, res) => {
  */
 const deleteVendorPart = async (req, res) => {
   try {
-    await VendorPartsCatalog.findByIdAndDelete(req.params.id);
-    res.status(200).json({ success: true, message: 'Part deleted' });
+    const id = req.params.id;
+    // 1. Try deleting from Global Catalog
+    const deletedGlobal = await VendorPartsCatalog.findByIdAndDelete(id);
+    if (deletedGlobal) {
+      return res.status(200).json({ success: true, message: 'Global part deleted' });
+    }
+
+    // 2. Try deleting from Vendor created Brands/Services
+    const Brand = require('../../models/Brand');
+    const UserService = require('../../models/UserService');
+    
+    // Delete Brand first
+    const deletedBrand = await Brand.findByIdAndDelete(id);
+    if (deletedBrand) {
+      // Also delete associated services under this brand
+      await UserService.deleteMany({ brandId: id });
+      return res.status(200).json({ success: true, message: 'Vendor part/brand deleted' });
+    }
+
+    res.status(404).json({ success: false, message: 'Part not found' });
   } catch (error) {
+    console.error('Delete vendor part error:', error);
     res.status(500).json({ success: false, message: 'Failed to delete vendor part' });
   }
 };
