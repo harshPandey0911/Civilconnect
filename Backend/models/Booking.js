@@ -57,6 +57,14 @@ const bookingSchema = new mongoose.Schema({
     type: Date,
     default: null
   },
+  isBidding: {
+    type: Boolean,
+    default: false
+  },
+  biddingDeadline: {
+    type: Date,
+    default: null
+  },
 
   // ==========================================
   // 2. SERVICE INFORMATION

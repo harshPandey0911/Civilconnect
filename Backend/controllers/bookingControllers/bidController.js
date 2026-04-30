@@ -41,7 +41,12 @@ const submitBid = async (req, res) => {
         bookingId,
         bidId: bid._id,
         price,
-        vendorId
+        vendor: {
+          id: vendorId,
+          name: req.user.name,
+          businessName: req.user.businessName,
+          rating: req.user.rating || 4.8
+        }
       });
     }
 

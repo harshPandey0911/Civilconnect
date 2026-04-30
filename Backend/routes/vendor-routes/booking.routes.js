@@ -36,7 +36,7 @@ const assignWorkerValidation = [
 ];
 
 const updateStatusValidation = [
-  body('status').isIn(['pending', 'confirmed', 'in_progress', 'completed', 'cancelled', 'rejected'])
+  body('status').isIn(['pending', 'confirmed', 'assigned', 'visited', 'in_progress', 'work_done', 'completed', 'cancelled', 'rejected'])
     .withMessage('Invalid status')
 ];
 

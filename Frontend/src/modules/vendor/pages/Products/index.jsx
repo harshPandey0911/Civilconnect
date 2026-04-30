@@ -22,7 +22,8 @@ const ServicesPage = () => {
     basePrice: '',
     discountPrice: '',
     description: '',
-    type: 'service' // 'service' or 'product'
+    type: 'service', // 'service' or 'product'
+    isPriceDisclosed: true
   });
 
   useEffect(() => {
@@ -103,7 +104,7 @@ const ServicesPage = () => {
       if (res.data.success) {
         toast.success(`${form.type === 'service' ? 'Service' : 'Product'} created successfully!`);
         setIsModalOpen(false);
-        setForm({ title: '', categoryId: '', basePrice: '', discountPrice: '', description: '', type: 'service' });
+        setForm({ title: '', categoryId: '', basePrice: '', discountPrice: '', description: '', type: 'service', isPriceDisclosed: true });
         setImageFile(null);
         setImagePreview('');
         fetchData();
@@ -153,8 +154,14 @@ const ServicesPage = () => {
                   <h4 className="font-black text-gray-900 truncate leading-tight">{p.title}</h4>
                   <p className="text-[10px] text-gray-500 uppercase font-black tracking-widest mt-0.5">{p.category}</p>
                   <div className="mt-1 flex gap-2 items-center">
-                    <span className="text-teal-600 font-black">₹{p.basePrice}</span>
-                    {p.discountPrice > 0 && <span className="text-xs text-red-500 line-through">₹{p.basePrice + p.discountPrice}</span>}
+                    {p.isPriceDisclosed !== false ? (
+                      <>
+                        <span className="text-teal-600 font-black">₹{p.basePrice}</span>
+                        {p.discountPrice > 0 && <span className="text-xs text-red-500 line-through">₹{p.basePrice + p.discountPrice}</span>}
+                      </>
+                    ) : (
+                      <span className="text-gray-400 font-black text-[10px] uppercase tracking-tighter bg-gray-100 px-2 py-0.5 rounded-md">Not Disclosed</span>
+                    )}
                   </div>
                 </div>
                 <button 
@@ -191,7 +198,7 @@ const ServicesPage = () => {
                   <button 
                     type="button" 
                     onClick={() => {
-                      setForm({...form, type: 'service', categoryId: ''});
+                      setForm({...form, type: 'service', categoryId: '', isPriceDisclosed: true});
                     }}
                     className={`flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-lg transition-all ${form.type === 'service' ? 'bg-white text-teal-600 shadow-sm' : 'text-gray-400'}`}
                   >
@@ -231,16 +238,38 @@ const ServicesPage = () => {
                   </select>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 block">Selling Price (₹)</label>
-                    <input type="number" value={form.basePrice} onChange={e => setForm({...form, basePrice: e.target.value})} className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-sm font-bold shadow-inner" placeholder="0" />
+                {/* Price Disclosure Toggle - Only for Products */}
+                {form.type === 'product' && (
+                  <div className="flex bg-gray-50 border border-gray-100 p-1 rounded-2xl shadow-inner animate-in fade-in zoom-in-95 duration-300">
+                    <button 
+                      type="button" 
+                      onClick={() => setForm({...form, isPriceDisclosed: true})}
+                      className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${form.isPriceDisclosed ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400'}`}
+                    >
+                      Selling Price
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={() => setForm({...form, isPriceDisclosed: false, basePrice: 0, discountPrice: 0})}
+                      className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${!form.isPriceDisclosed ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400'}`}
+                    >
+                      Not Disclosed
+                    </button>
                   </div>
-                  <div>
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 block">Original Price (₹)</label>
-                    <input type="number" value={form.discountPrice} onChange={e => setForm({...form, discountPrice: e.target.value})} className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-sm font-bold shadow-inner" placeholder="For discount" />
+                )}
+
+                {form.isPriceDisclosed && (
+                  <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div>
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 block">Selling Price (₹)</label>
+                      <input type="number" value={form.basePrice} onChange={e => setForm({...form, basePrice: e.target.value})} className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-sm font-bold shadow-inner focus:ring-2 focus:ring-teal-500/20 outline-none" placeholder="0" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 block">Original Price (₹)</label>
+                      <input type="number" value={form.discountPrice} onChange={e => setForm({...form, discountPrice: e.target.value})} className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-sm font-bold shadow-inner focus:ring-2 focus:ring-teal-500/20 outline-none" placeholder="For discount" />
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div>
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 block">Display Image</label>

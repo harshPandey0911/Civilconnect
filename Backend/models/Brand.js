@@ -95,6 +95,10 @@ const brandSchema = new mongoose.Schema({
     type: String,
     enum: ['service', 'product'],
     default: 'service'
+  },
+  isPriceDisclosed: {
+    type: Boolean,
+    default: true
   }
 }, {
   timestamps: true

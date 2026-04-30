@@ -4,7 +4,7 @@ import { AiFillStar } from 'react-icons/ai';
 import { themeColors } from '../../../../theme';
 import { optimizeCloudinaryUrl } from '../../../../utils/cloudinaryOptimize';
 
-const DetailedServiceCard = memo(({ image, title, rating, reviews, price, originalPrice, discount, onClick, onAddClick }) => {
+const DetailedServiceCard = memo(({ image, title, rating, reviews, price, originalPrice, discount, onClick, onAddClick, isPriceDisclosed = true }) => {
   const cardRef = useRef(null);
 
   // Format price (remove non-digits, then format)
@@ -74,7 +74,7 @@ const DetailedServiceCard = memo(({ image, title, rating, reviews, price, origin
       onClick={onClick}
     >
       <div className="relative">
-        {discount && (
+        {discount && isPriceDisclosed && (
           <div
             className="absolute top-3 left-3 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md z-10"
             style={{ backgroundColor: themeColors.button }}
@@ -108,10 +108,16 @@ const DetailedServiceCard = memo(({ image, title, rating, reviews, price, origin
         </div>
 
         <div className="flex items-center gap-2 mt-auto">
-          {displayOriginalPrice && (
-            <span className="text-[10px] text-gray-400 line-through">₹{displayOriginalPrice}</span>
+          {isPriceDisclosed ? (
+            <>
+              {displayOriginalPrice && (
+                <span className="text-[10px] text-gray-400 line-through">₹{displayOriginalPrice}</span>
+              )}
+              <span className="text-[14px] font-bold text-gray-900">₹{displayPrice}</span>
+            </>
+          ) : (
+            <span className="text-[11px] font-black text-gray-400 uppercase tracking-tighter bg-gray-50 px-2 py-0.5 rounded-md border border-gray-100">Not Disclosed</span>
           )}
-          <span className="text-[14px] font-bold text-gray-900">₹{displayPrice}</span>
 
           <button
             className="ml-auto text-[10px] font-bold px-2.5 py-1 rounded-full border transition-all duration-300"

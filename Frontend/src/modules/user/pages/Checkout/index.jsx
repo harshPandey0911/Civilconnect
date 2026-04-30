@@ -52,6 +52,7 @@ const Checkout = () => {
   const [searchingVendors, setSearchingVendors] = useState(false);
   const [showVendorModal, setShowVendorModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('online'); // 'online' | 'pay_at_home'
+  const [bids, setBids] = useState([]); // Array to collect multiple vendor responses
 
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(null);
@@ -411,32 +412,45 @@ const Checkout = () => {
     socket.on('connect_error', (err) => {
     });
 
+    socket.on('new_bid_received', (data) => {
+      if (data.bookingId === bookingRequest._id) {
+        setBids(prev => {
+          if (prev.some(b => b.bidId === data.bidId)) return prev;
+          const newBid = {
+            id: data.bidId,
+            bidId: data.bidId,
+            vendorId: data.vendor.id,
+            name: data.vendor.name,
+            businessName: data.vendor.businessName,
+            rating: data.vendor.rating,
+            price: data.price,
+            distance: data.vendor.distance || 'Nearby',
+            estimatedTime: '15-30 min'
+          };
+          return [...prev, newBid];
+        });
+        toast.success(`New quote from ${data.vendor.businessName}!`, { icon: '💰' });
+      }
+    });
+
     socket.on('booking_accepted', (data) => {
       if (data.bookingId === bookingRequest._id) {
-
-        // Construct vendor object from event data
-        // Note: Real backend should send full details, falling back to defaults for display
         const vendorData = {
           id: data.vendor.id,
           name: data.vendor.name || 'Vendor',
           businessName: data.vendor.businessName || 'Service Provider',
-          rating: 4.8, // Default if not sent
-          distance: 'Nearby', // Default if not sent
+          rating: 4.8,
+          distance: 'Nearby',
           estimatedTime: '15-20 mins',
           price: bookingRequest.amount
         };
-
         setAcceptedVendor(vendorData);
         setCurrentStep('accepted');
         setSearchingVendors(false);
-        toast.success(`${vendorData.businessName} accepted your booking!`);
-
-        // Close modal after 2 seconds and navigate to confirmation
+        toast.success(`${vendorData.businessName} accepted!`);
         setTimeout(() => {
           setShowVendorModal(false);
-          navigate(`/user/booking-confirmation/${bookingRequest._id}`, {
-            replace: true
-          });
+          navigate(`/user/booking-confirmation/${bookingRequest._id}`, { replace: true });
         }, 2000);
       }
     });
@@ -1147,6 +1161,43 @@ const Checkout = () => {
     );
   }
 
+  const handleSelectBid = async (bidId) => {
+    try {
+      toast.loading('Confirming vendor selection...');
+      const response = await bookingService.acceptBid(bidId);
+      toast.dismiss();
+
+      if (response.success) {
+        toast.success('Vendor confirmed!');
+        const selectedBid = bids.find(b => b.bidId === bidId);
+        setAcceptedVendor(selectedBid);
+        setCurrentStep('accepted');
+        
+        setTimeout(() => {
+          setShowVendorModal(false);
+          navigate(`/user/booking-confirmation/${bookingRequest._id}`, { replace: true });
+        }, 1500);
+      } else {
+        toast.error(response.message || 'Failed to select vendor');
+      }
+    } catch (error) {
+      toast.dismiss();
+      toast.error('Failed to select vendor');
+    }
+  };
+
+  const handleWait = () => {
+    if (!bookingRequest?._id || bids.length === 0 || !socket) return;
+    
+    // Emit wait request to existing socket context
+    socket.emit('user_wait_request', {
+      bookingId: bookingRequest._id,
+      vendorId: bids[0].vendorId
+    });
+
+    toast.success('Wait request sent to vendor. Searching for 5 mins.');
+  };
+
   return (
     <div className="min-h-screen bg-white pb-80">
       {/* Header */}
@@ -1256,7 +1307,9 @@ const Checkout = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-base font-bold text-black">
-                    {calculateItemPrice(item) === 0 ? (
+                    {item.isPriceDisclosed === false ? (
+                      <span className="text-[11px] text-gray-400 font-black uppercase tracking-tighter bg-gray-50 px-2 py-0.5 rounded border border-gray-100">Not Disclosed</span>
+                    ) : calculateItemPrice(item) === 0 ? (
                       <span className="text-green-600">Free</span>
                     ) : (
                       `₹${(item.price || 0).toLocaleString('en-IN')}`
@@ -1566,9 +1619,14 @@ const Checkout = () => {
         }}
         currentStep={currentStep}
         acceptedVendor={acceptedVendor}
+        bids={bids}
+        onSelectBid={handleSelectBid}
+        onWait={handleWait}
         onRetry={() => {
+          setBids([]);
           handleSearchVendors();
         }}
+        bookingDeadline={bookingRequest?.biddingDeadline}
       />
 
       {/* Contact Details Edit Modal */}

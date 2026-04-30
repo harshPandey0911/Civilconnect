@@ -1,169 +1,213 @@
 import React, { useEffect, useState } from 'react';
 import { themeColors } from '../../../../../theme';
+import { FiClock, FiStar, FiChevronRight, FiCheck, FiX, FiUser } from 'react-icons/fi';
+import { motion, AnimatePresence } from 'framer-motion';
 
-const VendorSearchModal = ({ isOpen, onClose, currentStep, acceptedVendor, onRetry }) => {
+const VendorSearchModal = ({ 
+  isOpen, 
+  onClose, 
+  currentStep, 
+  acceptedVendor, 
+  onRetry, 
+  bids = [], 
+  onSelectBid, 
+  onWait,
+  bookingDeadline 
+}) => {
   const [dots, setDots] = useState('.');
+  const [timeLeft, setTimeLeft] = useState('');
+  const [viewMode, setViewMode] = useState('searching'); // 'searching' | 'single_quote' | 'multi_quote'
+  const [activeBidIndex, setActiveBidIndex] = useState(0);
 
+  // Sync viewMode with bids and currentStep
   useEffect(() => {
-    if (isOpen && (currentStep === 'searching' || currentStep === 'waiting')) {
+    if (currentStep === 'searching' || currentStep === 'waiting') {
+      if (bids.length === 0) {
+        setViewMode('searching');
+      } else if (bids.length === 1 && viewMode !== 'multi_quote') {
+        setViewMode('single_quote');
+      }
+    }
+  }, [bids.length, currentStep]);
+
+  // Animation for searching dots
+  useEffect(() => {
+    if (isOpen && viewMode === 'searching') {
       const interval = setInterval(() => {
         setDots(prev => prev.length >= 3 ? '.' : prev + '.');
       }, 500);
       return () => clearInterval(interval);
     }
-  }, [isOpen, currentStep]);
+  }, [isOpen, viewMode]);
+
+  // Timer Countdown Logic
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const interval = setInterval(() => {
+      const now = new Date().getTime();
+      const targetTime = viewMode === 'multi_quote' ? (bookingDeadline || Date.now() + 300000) : (Date.now() + 60000); 
+      const end = new Date(targetTime).getTime();
+      const diff = end - now;
+
+      if (diff <= 0) {
+        setTimeLeft('00:00');
+        clearInterval(interval);
+      } else {
+        const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const secs = Math.floor((diff % (1000 * 60)) / 1000);
+        setTimeLeft(`${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isOpen, bookingDeadline, viewMode]);
 
   if (!isOpen) return null;
 
+  const currentBid = bids[activeBidIndex] || bids[0];
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-all duration-300">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden transform transition-all relative">
+      <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm overflow-hidden transform transition-all relative">
 
-        {/* Close/Minimize Button - Top Right */}
+        {/* Close/Minimize Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-30 p-2 bg-white/90 rounded-full shadow-sm text-gray-400 hover:text-gray-600 transition-colors hover:bg-white"
+          className="absolute top-6 right-6 z-30 p-2 bg-gray-50 rounded-full text-gray-400 hover:text-gray-600 transition-all active:scale-95"
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 6L6 18M6 6l12 12" />
-          </svg>
+          <FiX strokeWidth={3} />
         </button>
 
-        {(currentStep === 'searching' || currentStep === 'waiting') && (
-          <div className="flex flex-col items-center justify-center pt-10 pb-16 px-6 relative min-h-[480px]">
-
-            {/* Map-like Background (Subtle) */}
-            <div className="absolute inset-0 opacity-5 pointer-events-none">
-              <div className="w-full h-full" style={{
-                backgroundImage: 'radial-gradient(#000 1px, transparent 1px)',
-                backgroundSize: '20px 20px'
-              }}></div>
-            </div>
-
-            {/* Central Radar Animation */}
+        {/* SEARCHING RADAR VIEW */}
+        {(currentStep === 'searching' || currentStep === 'waiting') && viewMode === 'searching' && (
+          <div className="flex flex-col items-center justify-center pt-12 pb-16 px-6 min-h-[480px]">
             <div className="relative w-56 h-56 flex items-center justify-center mb-8">
-              {/* Outer Ripples */}
-              <div className="absolute inset-0 rounded-full border-2 opacity-20 animate-ping"
-                style={{ borderColor: themeColors.brand.teal, animationDuration: '3s' }}></div>
-              <div className="absolute inset-4 rounded-full border opacity-40 animate-ping"
-                style={{ borderColor: themeColors.brand.teal, animationDuration: '3s', animationDelay: '0.6s' }}></div>
-
-              {/* Rotating Scanner Gradient */}
-              <div className="absolute inset-0 rounded-full animate-spin-slow opacity-30"
-                style={{
-                  background: `conic-gradient(transparent 180deg, ${themeColors.brand.teal})`,
-                  animationDuration: '4s'
-                }}></div>
-
-              {/* Center Core */}
+              <div className="absolute inset-0 rounded-full border-2 opacity-20 animate-ping" style={{ borderColor: themeColors.brand.teal, animationDuration: '3s' }}></div>
+              <div className="absolute inset-4 rounded-full border opacity-40 animate-ping" style={{ borderColor: themeColors.brand.teal, animationDuration: '3s', animationDelay: '0.6s' }}></div>
+              <div className="absolute inset-0 rounded-full animate-spin-slow opacity-30" style={{ background: `conic-gradient(transparent 180deg, ${themeColors.brand.teal})`, animationDuration: '4s' }}></div>
               <div className="relative z-10 w-20 h-20 bg-white rounded-full shadow-lg flex items-center justify-center p-1">
-                <div className="w-full h-full rounded-full flex items-center justify-center relative overflow-hidden"
-                  style={{ background: `linear-gradient(135deg, ${themeColors.brand.teal}15, ${themeColors.brand.teal}05)` }}>
-                  {/* User Icon or Brand Icon */}
-                  <div className="w-3 h-3 rounded-full shadow-lg animate-pulse"
-                    style={{ backgroundColor: themeColors.brand.teal }}></div>
-                  <div className="absolute w-full h-full animate-pulse opacity-30 rounded-full"
-                    style={{ backgroundColor: themeColors.brand.teal }}></div>
+                <div className="w-full h-full rounded-full flex items-center justify-center relative overflow-hidden" style={{ background: `linear-gradient(135deg, ${themeColors.brand.teal}15, ${themeColors.brand.teal}05)` }}>
+                  <div className="w-3 h-3 rounded-full shadow-lg animate-pulse" style={{ backgroundColor: themeColors.brand.teal }}></div>
                 </div>
               </div>
-
-              {/* Floating "Found" Dots Animation */}
-              <div className="absolute top-8 right-8 w-2 h-2 rounded-full animate-bounce opacity-50" style={{ backgroundColor: themeColors.brand.orange, animationDelay: '0.2s' }}></div>
-              <div className="absolute bottom-6 left-6 w-2 h-2 rounded-full animate-bounce opacity-50" style={{ backgroundColor: themeColors.brand.yellow, animationDelay: '1.5s' }}></div>
             </div>
-
-            {/* Status Text */}
             <div className="text-center relative z-20 px-4 mb-4">
-              <h3 className="text-xl font-black text-gray-900 mb-2">Searching nearby {currentStep === 'waiting' ? 'professionals' : 'experts'}</h3>
-              <p className="text-gray-400 text-xs font-bold uppercase tracking-widest leading-relaxed">
-                Searching within 10km radius{dots}
-              </p>
+              <h3 className="text-xl font-black text-gray-900 mb-2 italic uppercase tracking-tight">Searching Experts</h3>
+              <p className="text-gray-400 text-[10px] font-black uppercase tracking-[0.2em]">Finding nearby professionals{dots}</p>
             </div>
-
-            {/* Bottom Pill - Now positioned relative to avoid overlap */}
-            <div className="flex justify-center mt-2">
-              <div className="px-4 py-2 bg-gray-50 rounded-full border border-gray-100 text-[10px] font-black uppercase tracking-tighter text-gray-400">
-                Searching for available providers
-              </div>
-            </div>
-
+            <div className="px-4 py-2 bg-gray-50 rounded-full border border-gray-100 text-[10px] font-black uppercase tracking-tighter text-gray-400 mt-4">Estimated wait: 1-2 mins</div>
           </div>
         )}
 
-        {currentStep === 'accepted' && acceptedVendor && (
-          <div className="flex flex-col items-center pt-12 pb-10 px-6 bg-white w-full h-full min-h-[450px]">
-            {/* Success Icon */}
-            <div className="w-20 h-20 rounded-full flex items-center justify-center mb-6 shadow-2xl animate-bounce-short"
-              style={{ background: `linear-gradient(135deg, ${themeColors.brand.teal}, ${themeColors.brand.secondary})` }}>
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
+        {/* SINGLE QUOTE VIEW (SS1 style) */}
+        {(currentStep === 'searching' || currentStep === 'waiting') && viewMode === 'single_quote' && currentBid && (
+          <div className="flex flex-col">
+            <div className="h-44 bg-gradient-to-br from-[#7C3AED] to-[#5B21B6] flex flex-col items-center justify-center p-6 text-white relative">
+              <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center mb-4 border border-white/30 shadow-xl">
+                <span className="text-3xl font-black text-white">$</span>
+              </div>
+              <h3 className="text-2xl font-black italic tracking-tight">New Quote Received!</h3>
+              <p className="text-[10px] font-black uppercase tracking-widest text-white/70 mt-1">Vendor is ready to work</p>
             </div>
 
-            <h3 className="text-2xl font-black text-gray-900 mb-2 italic">EXPERT FOUND!</h3>
-            <p className="text-gray-400 text-[10px] text-center mb-8 px-4 font-black uppercase tracking-widest">
-              Request accepted by professional
-            </p>
+            <div className="px-8 pt-10 pb-8 bg-white -mt-6 rounded-t-[2.5rem] relative z-10">
+              <div className="bg-gray-50 rounded-[2rem] p-5 flex items-center gap-4 border border-gray-100 mb-6">
+                <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center text-[#7C3AED] shadow-sm border border-gray-100"><FiUser className="w-7 h-7" /></div>
+                <div>
+                  <h4 className="font-black text-gray-900 text-lg leading-none">{currentBid.businessName}</h4>
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="flex items-center gap-1 text-xs font-black text-yellow-500"><FiStar className="fill-current" /> {currentBid.rating || '4.8'}</span>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest border-l pl-2 border-gray-200">Verified Expert</span>
+                  </div>
+                </div>
+              </div>
 
-            {/* Vendor Card */}
-            <div className="w-full bg-gray-50 rounded-[32px] p-6 border border-gray-100 mb-10 relative overflow-hidden shadow-sm">
+              <div className="text-center mb-8">
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2">Service Charge</p>
+                <div className="flex items-center justify-center gap-2">
+                  <span className="text-5xl font-black text-[#7C3AED] tracking-tighter">₹{currentBid.price}</span>
+                  <span className="px-3 py-1 bg-indigo-50 text-[#7C3AED] text-[10px] font-black uppercase rounded-full">Total</span>
+                </div>
+              </div>
+
+              {/* ACTION BUTTONS GRID */}
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <button 
+                    onClick={() => onRetry()} 
+                    className="py-4 bg-[#FFF1F1] text-[#FF4D4D] rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center"
+                  >
+                    Decline
+                  </button>
+                  <button 
+                    onClick={() => {
+                      if (onWait) onWait();
+                      setViewMode('multi_quote');
+                    }}
+                    className="py-4 bg-teal-50 text-teal-600 rounded-2xl font-black text-xs uppercase tracking-widest border border-teal-100 transition-all active:scale-95 flex items-center justify-center"
+                  >
+                    Wait (5 min)
+                  </button>
+                </div>
+                <button 
+                  onClick={() => onSelectBid(currentBid.bidId || currentBid.id)}
+                  className="w-full py-5 bg-[#4F46E5] text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-500/30 transition-all active:scale-95"
+                >
+                  Accept & Book
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MULTI QUOTE VIEW */}
+        {(currentStep === 'searching' || currentStep === 'waiting') && viewMode === 'multi_quote' && (
+          <div className="flex flex-col pt-12 pb-8 px-6 min-h-[520px]">
+            <div className="text-center mb-6">
+              <h3 className="text-2xl font-black text-gray-900 mb-1 italic">Choice is Yours</h3>
+              <div className="flex items-center justify-center gap-2 text-teal-600 font-black text-xs uppercase tracking-widest">
+                <FiClock className="animate-pulse" />
+                <span>Expires in {timeLeft}</span>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto pr-1 -mr-1 custom-scrollbar">
+              <div className="space-y-4 pb-4">
+                {bids.map((bid, index) => (
+                  <div key={bid.id || index} className="group bg-gray-50 hover:bg-white p-4 rounded-[2rem] border border-gray-100 hover:border-teal-100 hover:shadow-xl transition-all duration-300 relative overflow-hidden">
+                    <div className="flex items-center gap-4 relative z-10">
+                      <div className="w-12 h-12 rounded-2xl bg-[#4F46E5] flex items-center justify-center text-white font-black text-lg">{bid.businessName?.charAt(0)}</div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-black text-gray-900 text-sm truncate">{bid.businessName}</h4>
+                        <div className="flex items-center gap-3 mt-1">
+                          <span className="flex items-center gap-1 text-[10px] font-black text-yellow-500"><FiStar className="fill-current" /> {bid.rating || '4.8'}</span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-black text-gray-900">₹{bid.price}</div>
+                        <button onClick={() => onSelectBid(bid.bidId || bid.id)} className="mt-1 text-[9px] font-black uppercase text-teal-600 hover:text-teal-700 flex items-center gap-1">Book <FiChevronRight /></button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ACCEPTED STATE */}
+        {currentStep === 'accepted' && acceptedVendor && (
+          <div className="flex flex-col items-center pt-14 pb-10 px-8 bg-white w-full h-full min-h-[480px]">
+            <div className="w-24 h-24 rounded-[2.5rem] flex items-center justify-center mb-8 shadow-2xl shadow-teal-500/20 bg-gradient-to-br from-teal-500 to-emerald-600"><FiCheck className="w-12 h-12 text-white" strokeWidth={3} /></div>
+            <h3 className="text-3xl font-black text-gray-900 mb-2 italic uppercase">Booked!</h3>
+            <p className="text-gray-400 text-[10px] text-center mb-10 px-4 font-black uppercase tracking-widest leading-loose">Preparing for your service</p>
+            <div className="w-full bg-gray-50 rounded-[2.5rem] p-6 border border-gray-100 mb-10 relative overflow-hidden">
               <div className="relative z-10">
                 <h4 className="font-black text-xl text-gray-900 mb-1">{acceptedVendor.businessName}</h4>
-                <div className="flex items-center gap-4 text-xs font-bold text-gray-500 mt-3">
-                  <span className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-full border border-gray-100 shadow-sm">
-                    <span className="text-yellow-400">★</span> {acceptedVendor.rating || '4.9'}
-                  </span>
-                  <span className="flex items-center gap-1.5 bg-green-50 text-green-600 px-3 py-1.5 rounded-full border border-green-100 uppercase tracking-tighter text-[10px]">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                    {acceptedVendor.distance || 'Nearby'}
-                  </span>
-                </div>
+                <div className="flex items-center gap-2 mt-3"><span className="bg-white px-3 py-1 rounded-full border border-gray-100 text-[10px] font-black text-teal-600 uppercase">Confirmed</span></div>
               </div>
-              {/* Background decoration */}
-              <div className="absolute -right-6 -bottom-6 w-24 h-24 rounded-full opacity-10" style={{ backgroundColor: themeColors.brand.teal }}></div>
             </div>
-
-            {/* Action Button */}
-            <button
-              onClick={onClose}
-              className="w-full text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl transition-all active:scale-95"
-              style={{
-                background: `linear-gradient(135deg, ${themeColors.brand.teal}, ${themeColors.brand.secondary})`,
-              }}
-            >
-              Continue to Details
-            </button>
-          </div>
-        )}
-
-        {currentStep === 'failed' && (
-          <div className="flex flex-col items-center pt-12 pb-10 px-6 bg-white w-full h-full min-h-[450px]">
-            {/* Failed Icon */}
-            <div className="w-20 h-20 rounded-full flex items-center justify-center mb-6 shadow-2xl bg-red-50 border-2 border-red-100">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            </div>
-
-            <h3 className="text-2xl font-black text-gray-900 mb-2 italic">NO EXPERT FOUND</h3>
-            <p className="text-gray-400 text-[10px] text-center mb-10 px-8 font-black uppercase tracking-widest leading-relaxed">
-              We couldn't find any available professionals in your area right now.
-            </p>
-
-            <button
-              onClick={onRetry}
-              className="w-full text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl transition-all active:scale-95 mb-4"
-              style={{ background: themeColors.button }}
-            >
-              Search Again
-            </button>
-            <button
-              onClick={onClose}
-              className="w-full text-gray-400 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all"
-            >
-              Cancel Booking
-            </button>
+            <button onClick={onClose} className="w-full py-5 bg-black text-white rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-xl transition-all active:scale-95">Go to Details</button>
           </div>
         )}
 
