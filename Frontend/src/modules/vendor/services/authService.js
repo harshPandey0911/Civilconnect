@@ -280,3 +280,16 @@ export const verifyToken = async () => {
   }
 };
 
+/**
+ * Get vendor registration status by ID
+ */
+export const getRegistrationStatus = async (vendorId) => {
+  try {
+    const response = await api.get(`/vendors/auth/registration-status/${vendorId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching registration status:', error);
+    throw error;
+  }
+};
+

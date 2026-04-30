@@ -109,7 +109,14 @@ const verifyLogin = async (req, res) => {
 
       // Check status checks (Login Logic)
       if (vendor.approvalStatus === VENDOR_STATUS.REJECTED) {
-        return res.status(403).json({ success: false, message: 'Account rejected.' });
+        return res.status(200).json({
+          success: true,
+          message: 'Your account application has been rejected.',
+          vendor: { 
+            adminApproval: 'rejected',
+            rejectedReason: vendor.rejectedReason || 'Your application did not meet our requirements.'
+          }
+        });
       }
       if (vendor.approvalStatus === VENDOR_STATUS.SUSPENDED) {
         return res.status(403).json({ success: false, message: 'Account suspended.' });
@@ -120,10 +127,35 @@ const verifyLogin = async (req, res) => {
 
       // BLOCK PENDING VENDORS
       if (vendor.approvalStatus === VENDOR_STATUS.PENDING) {
+        // Auto-expiry check for self-verification (10 days limit)
+        if (vendor.policeVerification?.method === 'self' && 
+            vendor.policeVerification?.status === 'pending' && 
+            vendor.policeVerification?.expiryDate && 
+            new Date() > new Date(vendor.policeVerification.expiryDate)) {
+          
+          vendor.approvalStatus = VENDOR_STATUS.REJECTED;
+          vendor.policeVerification.status = 'expired';
+          vendor.rejectedReason = 'Police verification period expired (10 days limit).';
+          await vendor.save();
+          
+          return res.status(200).json({
+            success: true,
+            message: 'Your account application has been rejected.',
+            vendor: { 
+              adminApproval: 'rejected',
+              rejectedReason: vendor.rejectedReason
+            }
+          });
+        }
+
         return res.status(200).json({
           success: true,
-          message: 'Your account is currently under review. Please wait for admin approval.',
-          vendor: { adminApproval: 'pending' }
+          message: 'Your account is currently under review. Please complete verification steps.',
+          vendor: { 
+            id: vendor._id,
+            adminApproval: 'pending',
+            policeVerification: vendor.policeVerification
+          }
         });
       }
 
@@ -547,11 +579,36 @@ const refreshToken = async (req, res) => {
   }
 };
 
+/**
+ * Get vendor registration/verification status
+ */
+const getRegistrationStatus = async (req, res) => {
+  try {
+    const { vendorId } = req.params;
+    const vendor = await Vendor.findById(vendorId).select('approvalStatus policeVerification rejectedReason');
+    
+    if (!vendor) {
+      return res.status(404).json({ success: false, message: 'Vendor not found' });
+    }
+
+    res.status(200).json({
+      success: true,
+      approvalStatus: vendor.approvalStatus,
+      policeVerification: vendor.policeVerification,
+      rejectedReason: vendor.rejectedReason
+    });
+  } catch (error) {
+    console.error('Get registration status error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
 module.exports = {
   sendOTP,
   verifyLogin,
   register,
   login,
   logout,
-  refreshToken
+  refreshToken,
+  getRegistrationStatus
 };

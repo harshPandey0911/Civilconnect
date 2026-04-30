@@ -8,7 +8,7 @@ import verificationService from '../../services/verificationService';
 const Selection = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const vendorId = location.state?.vendorId;
+  const vendorId = location.state?.vendorId || sessionStorage.getItem('pendingVendorId');
   const [loading, setLoading] = useState(false);
 
   const handleChoice = async (method) => {

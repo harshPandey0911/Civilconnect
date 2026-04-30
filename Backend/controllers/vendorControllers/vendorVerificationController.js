@@ -75,6 +75,29 @@ exports.uploadPCCDocument = async (req, res) => {
 
     await vendor.save();
 
+    // Notify Admin (Non-blocking)
+    (async () => {
+      try {
+        const { createNotification } = require('../notificationControllers/notificationController');
+        const Admin = require('../../models/Admin');
+        const admins = await Admin.find({ role: 'super_admin' });
+        
+        const notificationData = {
+          type: 'vendor_pcc_upload',
+          title: 'New Police Verification Upload',
+          message: `Vendor ${vendor.name} has uploaded their PCC document for review.`,
+          relatedId: vendor._id,
+          relatedType: 'vendor'
+        };
+
+        await Promise.all(admins.map(admin => 
+          createNotification({ ...notificationData, adminId: admin._id })
+        ));
+      } catch (e) {
+        console.error('Admin notification error (PCC Upload):', e);
+      }
+    })();
+
     res.status(200).json({
       success: true,
       message: 'PCC document uploaded successfully',

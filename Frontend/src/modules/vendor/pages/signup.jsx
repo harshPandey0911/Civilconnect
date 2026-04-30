@@ -346,6 +346,7 @@ const VendorSignup = () => {
           setIsLoading(false);
           if (regResponse.success) {
             toast.success('OTP Verified! Complete your police verification choice.');
+            sessionStorage.setItem('pendingVendorId', regResponse.vendor.id);
             navigate('/vendor/police-verification/selection', { state: { vendorId: regResponse.vendor.id } });
           } else {
             toast.error(regResponse.message || 'Registration failed');

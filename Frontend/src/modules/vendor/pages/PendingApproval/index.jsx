@@ -1,18 +1,52 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { FiClock, FiLogOut, FiArrowLeft } from 'react-icons/fi';
+import React, { useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { FiClock, FiLogOut, FiArrowLeft, FiX } from 'react-icons/fi';
 import Logo from '../../../../components/common/Logo';
 import { themeColors } from '../../../../theme';
+import { getRegistrationStatus } from '../../services/authService';
 
 const PendingApproval = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isRejected = location.state?.status === 'REJECTED' || location.state?.status === 'rejected' || location.state?.rejected;
+  const reason = location.state?.reason || 'Your application did not meet our requirements.';
+  
   const brandColor = themeColors.brand?.teal || '#347989';
+
+  useEffect(() => {
+    const checkStatus = async () => {
+      const vendorId = sessionStorage.getItem('pendingVendorId');
+      if (!vendorId || isRejected) return;
+
+      try {
+        const response = await getRegistrationStatus(vendorId);
+        if (response.success) {
+          const pv = response.policeVerification;
+          const method = pv?.method?.toLowerCase();
+          const status = pv?.status?.toLowerCase();
+
+          // If they reach this page but still need to choose or upload, redirect them
+          if (!method) {
+            navigate('/vendor/police-verification/selection', { state: { vendorId } });
+          } else if (method === 'self' && status === 'pending') {
+            navigate('/vendor/police-verification/upload', { state: { vendorId } });
+          }
+          // Otherwise, stay on this page (it's either admin method or already submitted)
+        }
+      } catch (error) {
+        console.error('Failed to check vendor status:', error);
+      }
+    };
+
+    checkStatus();
+  }, [navigate, isRejected]);
 
   const handleBackToLogin = () => {
     // Clear any temporary tokens if they exist
     localStorage.removeItem('vendorAccessToken');
     localStorage.removeItem('vendorRefreshToken');
     localStorage.removeItem('vendorData');
+    sessionStorage.removeItem('pendingVendorId');
     navigate('/vendor/login');
   };
 
@@ -30,25 +64,35 @@ const PendingApproval = () => {
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
         <div className="bg-white py-12 px-8 shadow-2xl shadow-gray-200/50 sm:rounded-3xl border border-gray-100 relative overflow-hidden animate-slide-in-bottom">
-          <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-[#347989] via-[#D68F35] to-[#BB5F36]" />
+          <div className={`absolute top-0 left-0 right-0 h-2 bg-gradient-to-r ${isRejected ? 'from-red-500 to-orange-500' : 'from-[#347989] via-[#D68F35] to-[#BB5F36]'}`} />
           
           <div className="text-center">
-            <div className="mx-auto flex items-center justify-center h-24 w-24 rounded-full bg-orange-50 mb-6 animate-bounce-subtle">
-              <FiClock className="h-12 w-12 text-[#D68F35]" />
+            <div className={`mx-auto flex items-center justify-center h-24 w-24 rounded-full mb-6 animate-bounce-subtle ${isRejected ? 'bg-red-50' : 'bg-orange-50'}`}>
+              {isRejected ? (
+                <FiX className="h-12 w-12 text-red-500" />
+              ) : (
+                <FiClock className="h-12 w-12 text-[#D68F35]" />
+              )}
             </div>
             
             <h2 className="text-3xl font-extrabold text-gray-900 mb-4 tracking-tight">
-              Registration Under Review
+              {isRejected ? 'Application Rejected' : 'Registration Under Review'}
             </h2>
             
             <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-              Your application is currently being verified by our team. You'll be able to access your dashboard once your account is approved.
+              {isRejected 
+                ? "We regret to inform you that your application has been rejected."
+                : "Your application is currently being verified by our team. You'll be able to access your dashboard once your account is approved."}
             </p>
 
             <div className="space-y-4">
-              <div className="p-4 bg-blue-50 border border-blue-100 rounded-2xl">
-                <p className="text-sm text-blue-700">
-                  Approval usually takes <strong>24-48 hours</strong>. We will notify you once it's complete.
+              <div className={`p-4 rounded-2xl border ${isRejected ? 'bg-red-50 border-red-100' : 'bg-blue-50 border-blue-100'}`}>
+                <p className={`text-sm ${isRejected ? 'text-red-700' : 'text-blue-700'}`}>
+                  {isRejected ? (
+                    <><strong>Reason:</strong> {reason}</>
+                  ) : (
+                    <>Approval usually takes <strong>24-48 hours</strong>. We will notify you once it's complete.</>
+                  )}
                 </p>
               </div>
 

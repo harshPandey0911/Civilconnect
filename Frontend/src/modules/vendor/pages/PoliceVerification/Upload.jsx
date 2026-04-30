@@ -8,7 +8,7 @@ import verificationService from '../../services/verificationService';
 const Upload = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const vendorId = location.state?.vendorId;
+  const vendorId = location.state?.vendorId || sessionStorage.getItem('pendingVendorId');
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);

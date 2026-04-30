@@ -6,7 +6,8 @@ const {
   register,
   login,
   logout,
-  verifyLogin
+  verifyLogin,
+  getRegistrationStatus
 } = require('../../controllers/vendorControllers/vendorAuthController');
 const { authenticate } = require('../../middleware/authMiddleware');
 const { isVendor } = require('../../middleware/roleMiddleware');
@@ -45,6 +46,7 @@ router.post('/register', registerValidation, register);
 router.post('/login', loginValidation, login);
 router.post('/refresh-token', require('../../controllers/vendorControllers/vendorAuthController').refreshToken);
 router.post('/logout', authenticate, isVendor, logout);
+router.get('/registration-status/:vendorId', getRegistrationStatus);
 
 module.exports = router;
 

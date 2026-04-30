@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiCheck, FiX, FiEye, FiSearch, FiFilter, FiDownload, FiLoader, FiPower, FiTrash2 } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
@@ -13,6 +14,7 @@ const AllVendors = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedVendor, setSelectedVendor] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const navigate = useNavigate();
 
   // Load vendors from backend
   useEffect(() => {
@@ -93,7 +95,11 @@ const AllVendors = () => {
       }
     } catch (error) {
       console.error('Error approving vendor:', error);
-      toast.error('Failed to approve vendor. Please try again.');
+      if (error.response?.data?.requiresPoliceVerification) {
+        toast.error('You need to check first police verification');
+      } else {
+        toast.error(error.response?.data?.message || 'Failed to approve vendor. Please try again.');
+      }
     }
   };
 

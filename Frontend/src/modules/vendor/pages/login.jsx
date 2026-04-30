@@ -140,13 +140,37 @@ const VendorLogin = () => {
             state: { phone: phoneNumber.replace(/\D/g, ''), verificationToken: response.verificationToken }
           });
         } else {
+          // Check for rejected status
+          if (response.vendor?.adminApproval === 'rejected' || response.vendor?.adminApproval === 'REJECTED') {
+            navigate('/vendor/pending-approval', { 
+              state: { 
+                status: 'REJECTED', 
+                reason: response.vendor.rejectedReason 
+              } 
+            });
+            return;
+          }
+
           // Check for admin approval status
           if (response.vendor?.adminApproval === 'PENDING' || response.vendor?.adminApproval === 'pending') {
-            // Clear tokens if they were set by the service
-            localStorage.removeItem('vendorAccessToken');
-            localStorage.removeItem('vendorRefreshToken');
-            localStorage.removeItem('vendorData');
-            navigate('/vendor/pending-approval');
+            const pv = response.vendor.policeVerification;
+            const vendorId = response.vendor.id;
+            
+            // Store vendorId temporarily for persistence during verification steps
+            sessionStorage.setItem('pendingVendorId', vendorId);
+
+            // Granular Redirection based on Police Verification Status
+            const method = pv?.method?.toLowerCase();
+            const status = pv?.status?.toLowerCase();
+
+            if (!method) {
+              navigate('/vendor/police-verification/selection', { state: { vendorId } });
+            } else if (method === 'self' && status === 'pending') {
+              navigate('/vendor/police-verification/upload', { state: { vendorId } });
+            } else {
+              // Includes method === 'admin' OR status === 'submitted' OR status === 'rejected' (handled above)
+              navigate('/vendor/pending-approval');
+            }
             return;
           }
 
