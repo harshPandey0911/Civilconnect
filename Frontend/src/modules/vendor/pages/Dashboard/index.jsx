@@ -237,8 +237,15 @@ const Dashboard = memo(() => {
   }, [processApiResponse]);
 
   useEffect(() => {
+    // Check if subscription is active
+    const vendorData = JSON.parse(localStorage.getItem('vendorData') || '{}');
+    if (vendorData.id && !vendorData.isSubscriptionActive) {
+      console.log('[Dashboard] Vendor subscription not active, redirecting...');
+      navigate('/vendor/subscription', { replace: true });
+      return;
+    }
     loadDashboardData();
-  }, [loadDashboardData]);
+  }, [loadDashboardData, navigate]);
 
   // Check for redirected state (to open a specific alert modal)
   useEffect(() => {

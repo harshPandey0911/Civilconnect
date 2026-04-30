@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { FiCheck, FiStar, FiShield, FiZap, FiArrowRight } from 'react-icons/fi';
+import { FiCheck, FiStar, FiShield, FiZap, FiArrowRight, FiArrowLeft } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 import Logo from '../../../../components/common/Logo';
 import authService from '../../services/authService';
@@ -49,6 +49,25 @@ const SubscriptionSelection = () => {
     };
     checkActive();
 
+    // 1. Push a dummy state to history to intercept the NEXT back button press
+    window.history.pushState(null, "", window.location.href);
+
+    // 2. Handle browser back button (hardware or browser)
+    const handlePopState = (event) => {
+      // Clear vendor tokens so they land on login page as guest
+      localStorage.removeItem('vendorAccessToken');
+      localStorage.removeItem('vendorRefreshToken');
+      localStorage.removeItem('vendorData');
+      sessionStorage.removeItem('vendorAccessToken');
+      sessionStorage.removeItem('vendorRefreshToken');
+      sessionStorage.removeItem('vendorData');
+      
+      // Force navigation to login
+      navigate('/vendor/login', { replace: true });
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
     // Load Razorpay Script
     const script = document.createElement('script');
     script.src = 'https://checkout.razorpay.com/v1/checkout.js';
@@ -56,11 +75,22 @@ const SubscriptionSelection = () => {
     document.body.appendChild(script);
 
     return () => {
+      window.removeEventListener('popstate', handlePopState);
       if (document.body.contains(script)) {
         document.body.removeChild(script);
       }
     };
   }, [navigate, vendorId]);
+
+  const handleBackToLogin = () => {
+    localStorage.removeItem('vendorAccessToken');
+    localStorage.removeItem('vendorRefreshToken');
+    localStorage.removeItem('vendorData');
+    sessionStorage.removeItem('vendorAccessToken');
+    sessionStorage.removeItem('vendorRefreshToken');
+    sessionStorage.removeItem('vendorData');
+    navigate('/vendor/login', { replace: true });
+  };
 
   const handleSubscribe = async (plan) => {
     if (!vendorId) {
@@ -139,7 +169,18 @@ const SubscriptionSelection = () => {
   return (
     <div className="min-h-screen bg-[#f8fafc] py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-16">
+        <div className="text-center mb-16 relative">
+          {/* Back Button */}
+          <button
+            onClick={handleBackToLogin}
+            className="absolute -top-4 left-0 flex items-center gap-2 text-slate-500 hover:text-[#347989] font-bold transition-all z-20 group"
+          >
+            <div className="p-2 rounded-full bg-white shadow-sm border border-slate-100 group-hover:border-[#347989] transition-all">
+              <FiArrowLeft className="w-5 h-5" />
+            </div>
+            <span className="hidden sm:inline">Back to Login</span>
+          </button>
+
           <Logo className="h-12 mx-auto mb-8" />
           <h1 className="text-4xl font-extrabold text-slate-900 sm:text-5xl tracking-tight">
             Choose Your Growth Plan
