@@ -81,7 +81,8 @@ const getPublicBrands = async (req, res) => {
     }
 
     let brands = await Brand.find(query)
-      .select('title slug iconUrl logo imageUrl badge categoryIds basePrice discountPrice sections type')
+      .select('title slug iconUrl logo imageUrl badge categoryIds basePrice discountPrice sections type vendorId isPriceDisclosed')
+      .populate('vendorId', 'name businessName policeVerification address rating totalJobs profilePhoto')
       .sort({ createdAt: -1 })
       .lean();
 
@@ -122,7 +123,17 @@ const getPublicBrands = async (req, res) => {
         categoryIds: (brand.categoryIds || []).map(id => id.toString()),
         sections: brand.sections || [],
         type: brand.type || 'service',
-        isPriceDisclosed: brand.isPriceDisclosed ?? true
+        isPriceDisclosed: brand.isPriceDisclosed ?? true,
+        vendor: brand.vendorId ? {
+          id: brand.vendorId._id,
+          name: brand.vendorId.name,
+          businessName: brand.vendorId.businessName,
+          policeVerification: brand.vendorId.policeVerification,
+          address: brand.vendorId.address,
+          rating: brand.vendorId.rating,
+          totalJobs: brand.vendorId.totalJobs,
+          profilePhoto: brand.vendorId.profilePhoto
+        } : null
       }))
     });
   } catch (error) {
@@ -269,6 +280,7 @@ const getPublicServices = async (req, res) => {
 
     const services = await Service.find(query)
       .populate('brandId', 'title iconUrl')
+      .populate('vendorId', 'name businessName policeVerification address rating totalJobs profilePhoto')
       .sort({ createdAt: 1 })
       .lean();
 
@@ -286,7 +298,17 @@ const getPublicServices = async (req, res) => {
         brandName: svc.brandId?.title,
         brandIcon: svc.brandId?.iconUrl,
         type: svc.type || 'service',
-        isPriceDisclosed: svc.isPriceDisclosed ?? true
+        isPriceDisclosed: svc.isPriceDisclosed ?? true,
+        vendor: svc.vendorId ? {
+          id: svc.vendorId._id,
+          name: svc.vendorId.name,
+          businessName: svc.vendorId.businessName,
+          policeVerification: svc.vendorId.policeVerification,
+          address: svc.vendorId.address,
+          rating: svc.vendorId.rating,
+          totalJobs: svc.vendorId.totalJobs,
+          profilePhoto: svc.vendorId.profilePhoto
+        } : null
       }))
     });
   } catch (error) {
