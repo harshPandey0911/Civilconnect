@@ -38,6 +38,7 @@ const VendorSignup = () => {
   const [otpToken, setOtpToken] = useState('');
   const [verificationToken, setVerificationToken] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('');
   const [documentPreview, setDocumentPreview] = useState({});
   const [uploadingDocs, setUploadingDocs] = useState({});
   const [resendTimer, setResendTimer] = useState(0);
@@ -198,9 +199,11 @@ const VendorSignup = () => {
     if (!hasPanDoc) { toast.error('Please upload PAN document'); return; }
 
     setIsLoading(true);
+    setLoadingMessage('Initializing registration...');
 
     if (verificationToken) {
       try {
+        setLoadingMessage('Uploading documents...');
         const aadharDoc = formData.documents.find(d => d.type === 'aadhar')?.url || null;
         const aadharBackDoc = formData.documents.find(d => d.type === 'aadharBack')?.url || null;
         const panDoc = formData.documents.find(d => d.type === 'pan')?.url || null;
@@ -221,6 +224,7 @@ const VendorSignup = () => {
           verificationToken
         };
 
+        setLoadingMessage('Creating your profile...');
         const response = await register(registerData);
 
         if (response.success) {
@@ -239,36 +243,43 @@ const VendorSignup = () => {
         toast.error(error.response?.data?.message || 'Registration failed');
       } finally {
         setIsLoading(false);
+        setLoadingMessage('');
       }
       return;
     }
 
     try {
+      setLoadingMessage('Sending OTP...');
       const response = await sendVendorOTP(formData.phoneNumber);
       if (response.success) {
         if (response.vendor?.adminApproval?.toLowerCase() === 'pending') {
           setIsLoading(false);
+          setLoadingMessage('');
           navigate('/vendor/pending-approval');
           return;
         }
 
         if (!response.token) {
           setIsLoading(false);
+          setLoadingMessage('');
           toast.error(response.message || 'Failed to initialize verification.');
           return;
         }
 
         setOtpToken(response.token);
         setIsLoading(false);
+        setLoadingMessage('');
         setStep('otp');
         setResendTimer(120); // Start timer
         toast.success('OTP sent successfully');
       } else {
         setIsLoading(false);
+        setLoadingMessage('');
         toast.error(response.message || 'Failed to send OTP');
       }
     } catch (error) {
       setIsLoading(false);
+      setLoadingMessage('');
       toast.error(error.response?.data?.message || 'Failed to send OTP');
     }
   };
@@ -310,6 +321,7 @@ const VendorSignup = () => {
       return;
     }
     setIsLoading(true);
+    setLoadingMessage('Verifying OTP...');
     try {
       // 1. Verify OTP using the unified verify-login endpoint
       // This will return isNewUser: true and a verificationToken for new vendors
@@ -321,6 +333,7 @@ const VendorSignup = () => {
       if (response.success && response.isNewUser) {
         // Step 3: Complete registration now that phone is verified
         try {
+          setLoadingMessage('OTP Verified! Uploading documents...');
           const aadharDoc = formData.documents.find(d => d.type === 'aadhar')?.url || null;
           const aadharBackDoc = formData.documents.find(d => d.type === 'aadharBack')?.url || null;
           const panDoc = formData.documents.find(d => d.type === 'pan')?.url || null;
@@ -341,10 +354,11 @@ const VendorSignup = () => {
             verificationToken: response.verificationToken
           };
 
+          setLoadingMessage('Finalizing registration...');
           const regResponse = await register(registerData);
           
-          setIsLoading(false);
           if (regResponse.success) {
+            setLoadingMessage('Account created! Redirecting...');
             toast.success('OTP Verified! Complete your police verification choice.');
             sessionStorage.setItem('pendingVendorId', regResponse.vendor.id);
             navigate('/vendor/police-verification/selection', { state: { vendorId: regResponse.vendor.id } });
@@ -352,22 +366,21 @@ const VendorSignup = () => {
             toast.error(regResponse.message || 'Registration failed');
           }
         } catch (regError) {
-          setIsLoading(false);
           toast.error(regError.response?.data?.message || 'Registration failed after OTP verification');
         }
       } else if (response.success && !response.isNewUser) {
         // This shouldn't happen if they came through signup flow with a new number,
         // but if they are already a vendor, they might be logged in now.
-        setIsLoading(false);
         toast.success('Account already exists. Logged in successfully.');
         navigate('/vendor/dashboard');
       } else {
-        setIsLoading(false);
         toast.error(response.message || 'Verification failed');
       }
     } catch (error) {
-      setIsLoading(false);
       toast.error(error.response?.data?.message || 'Verification failed');
+    } finally {
+      setIsLoading(false);
+      setLoadingMessage('');
     }
   };
 
@@ -634,7 +647,10 @@ const VendorSignup = () => {
                 >
                   <span className="absolute inset-0 w-full h-full bg-white/10 group-hover:translate-x-full transition-transform duration-700 -translate-x-full" />
                   {isLoading ? (
-                    <LogoLoader fullScreen={false} inline={true} size="w-6 h-6" />
+                    <div className="flex flex-col items-center gap-1">
+                      <LogoLoader fullScreen={false} inline={true} size="w-6 h-6" />
+                      <span className="text-[10px] font-medium opacity-80">{loadingMessage}</span>
+                    </div>
                   ) : (
                     <span className="flex items-center relative z-10">
                       {verificationToken ? 'Finish Application' : 'Proceed to Verify'}
@@ -710,7 +726,10 @@ const VendorSignup = () => {
                     <span className="absolute inset-0 w-full h-full bg-white/10 group-hover:translate-x-full transition-transform duration-700 -translate-x-full" />
                     <span className="relative z-10 flex items-center justify-center">
                       {isLoading ? (
-                        <LogoLoader fullScreen={false} inline={true} size="w-6 h-6" />
+                        <div className="flex flex-col items-center gap-1">
+                          <LogoLoader fullScreen={false} inline={true} size="w-6 h-6" />
+                          <span className="text-[10px] font-medium opacity-80">{loadingMessage}</span>
+                        </div>
                       ) : (
                         'Verify & Register'
                       )}
