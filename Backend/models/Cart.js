@@ -94,6 +94,10 @@ const cartItemSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Vendor',
     default: null
+  },
+  isPriceDisclosed: {
+    type: Boolean,
+    default: true
   }
 }, { _id: true });
 

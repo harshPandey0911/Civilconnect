@@ -184,9 +184,18 @@ const getBookingById = async (req, res) => {
       });
     }
 
+    // Check if THIS vendor has already submitted a bid for this booking
+    const Bid = require('../../models/Bid');
+    const existingBid = await Bid.findOne({ bookingId: id, vendorId });
+
     res.status(200).json({
       success: true,
-      data: booking
+      data: {
+        ...booking.toObject(),
+        hasSubmittedBid: !!existingBid,
+        myBid: existingBid,
+        isSelfJob: !!(booking.assignedAt && !booking.workerId)
+      }
     });
   } catch (error) {
     console.error('Get booking error:', error);
@@ -205,8 +214,59 @@ const acceptBooking = async (req, res) => {
     const vendorId = req.user.id;
     const { id } = req.params;
 
-    // ATOMIC UPDATE: Check status and vendorId in query to prevent race conditions
-    // Only accept if status is REQUESTED/SEARCHING and NO vendor is assigned yet
+    const bookingCheck = await Booking.findById(id);
+    if (!bookingCheck) {
+      return res.status(404).json({ success: false, message: 'Booking not found' });
+    }
+
+    // ── Handle Bidding/Multi-Quote Flow ──
+    if (bookingCheck.isBidding && bookingCheck.status === BOOKING_STATUS.BIDDING) {
+      // Check if already bid
+      const Bid = require('../../models/Bid');
+      const existingBid = await Bid.findOne({ bookingId: id, vendorId });
+      if (existingBid) {
+        return res.status(400).json({ success: false, message: 'You have already submitted your response for this job.' });
+      }
+
+      // Create Bid (use finalAmount as default price for services)
+      const bid = await Bid.create({
+        bookingId: id,
+        vendorId,
+        price: bookingCheck.finalAmount || 0,
+        status: 'pending'
+      });
+
+      // Update BookingRequest for this vendor
+      const BookingRequest = require('../../models/BookingRequest');
+      await BookingRequest.findOneAndUpdate(
+        { bookingId: id, vendorId },
+        { status: 'ACCEPTED', respondedAt: new Date() } // Mark as accepted but don't close booking
+      );
+
+      // Notify User via Socket
+      const io = req.app.get('io');
+      if (io) {
+        io.to(`user_${bookingCheck.userId.toString()}`).emit('new_bid_received', {
+          bookingId: id,
+          bidId: bid._id,
+          price: bid.price,
+          vendor: {
+            id: vendorId,
+            name: req.user.name,
+            businessName: req.user.businessName,
+            rating: req.user.rating || 4.8
+          }
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: 'Your response has been sent to the customer. Please wait for their selection.',
+        data: bid
+      });
+    }
+
+    // ── Original Direct Acceptance Flow (For non-bidding or already assigned) ──
     const updatedBooking = await Booking.findOneAndUpdate(
       {
         _id: id,
@@ -660,7 +720,7 @@ const updateBookingStatus = async (req, res) => {
         [BOOKING_STATUS.PENDING]: [BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.REJECTED, BOOKING_STATUS.CANCELLED],
         [BOOKING_STATUS.AWAITING_PAYMENT]: [BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.CANCELLED, BOOKING_STATUS.REJECTED],
         [BOOKING_STATUS.CONFIRMED]: [BOOKING_STATUS.ASSIGNED, BOOKING_STATUS.IN_PROGRESS, BOOKING_STATUS.CANCELLED],
-        [BOOKING_STATUS.ASSIGNED]: [BOOKING_STATUS.VISITED, BOOKING_STATUS.IN_PROGRESS, BOOKING_STATUS.CANCELLED],
+        [BOOKING_STATUS.ASSIGNED]: [BOOKING_STATUS.VISITED, BOOKING_STATUS.IN_PROGRESS, BOOKING_STATUS.WORK_DONE, BOOKING_STATUS.COMPLETED, BOOKING_STATUS.CANCELLED],
         [BOOKING_STATUS.VISITED]: [BOOKING_STATUS.WORK_DONE, BOOKING_STATUS.IN_PROGRESS, BOOKING_STATUS.CANCELLED],
         [BOOKING_STATUS.IN_PROGRESS]: [BOOKING_STATUS.WORK_DONE, BOOKING_STATUS.COMPLETED, BOOKING_STATUS.CANCELLED],
         [BOOKING_STATUS.WORK_DONE]: [BOOKING_STATUS.COMPLETED, BOOKING_STATUS.CANCELLED]

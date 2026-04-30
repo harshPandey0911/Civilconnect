@@ -98,6 +98,32 @@ const initializeSocket = (server) => {
       }
     });
 
+    // User asks vendor to wait for 5 minutes
+    socket.on('user_wait_request', async (data) => {
+      // data: { bookingId, vendorId }
+      try {
+        const Booking = require('../models/Booking');
+        const newExpiresAt = new Date(Date.now() + 300000); // 5 minutes from now
+
+        await Booking.findByIdAndUpdate(data.bookingId, {
+          expiresAt: newExpiresAt,
+          isBidding: true
+        });
+
+        console.log(`[Socket] User ${socket.userId} asked Vendor ${data.vendorId} to wait. Extended to: ${newExpiresAt}`);
+        
+        if (io) {
+          io.to(`vendor_${data.vendorId}`).emit('user_waiting', {
+            bookingId: data.bookingId,
+            expiresAt: newExpiresAt,
+            message: 'User is waiting for more quotes. Please wait 5 minutes.'
+          });
+        }
+      } catch (error) {
+        console.error('[Socket] Error handling wait request:', error);
+      }
+    });
+
     // Vendor acknowledges receiving booking alert
     socket.on('booking_alert_received', async (data) => {
       try {

@@ -168,6 +168,7 @@ const CategoryModal = React.memo(({ isOpen, onClose, category, location, cartCou
         rating: "4.8",
         reviews: "1k+",
         vendorId: service.vendorId || selectedBrand?.vendorId || null,
+        isPriceDisclosed: service.isPriceDisclosed !== false,
         card: {
           title: service.title,
           subtitle: service.description || '',
@@ -337,9 +338,15 @@ const CategoryModal = React.memo(({ isOpen, onClose, category, location, cartCou
                                 <div className="flex-1 pr-4">
                                   <h3 className="font-black text-gray-900 text-[15px] leading-snug mb-0.5">{svc.title}</h3>
                                   <div className="flex items-center gap-2">
-                                    <span className="text-lg font-black text-emerald-600">₹{svc.discountPrice || svc.basePrice}</span>
-                                    {svc.discountPrice && svc.discountPrice < svc.basePrice && (
-                                      <span className="text-xs text-gray-400 line-through font-bold opacity-60">₹{svc.basePrice}</span>
+                                    {svc.isPriceDisclosed !== false ? (
+                                      <>
+                                        <span className="text-lg font-black text-emerald-600">₹{svc.discountPrice || svc.basePrice}</span>
+                                        {svc.discountPrice && svc.discountPrice < svc.basePrice && (
+                                          <span className="text-xs text-gray-400 line-through font-bold opacity-60">₹{svc.basePrice}</span>
+                                        )}
+                                      </>
+                                    ) : (
+                                      <span className="text-sm font-black text-gray-400 uppercase tracking-tighter bg-gray-50 px-2 py-1 rounded-lg border border-gray-100">Not Disclosed</span>
                                     )}
                                   </div>
                                 </div>

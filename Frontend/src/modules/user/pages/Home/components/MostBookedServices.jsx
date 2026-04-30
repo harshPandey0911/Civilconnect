@@ -112,6 +112,7 @@ const MostBookedServices = React.memo(({ services, onServiceClick, onAddClick })
             price={service.price}
             originalPrice={service.originalPrice}
             discount={service.discount}
+            isPriceDisclosed={service.isPriceDisclosed}
             image={service.image}
             onClick={() => onServiceClick?.(service)}
             onAddClick={() => onAddClick?.(service)}

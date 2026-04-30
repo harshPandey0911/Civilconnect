@@ -52,7 +52,7 @@ const BookingTimeline = () => {
         const response = await getBookingById(id);
         const apiData = response.data || response;
 
-        const isSelfJob = apiData.assignedAt && !apiData.workerId;
+        const isSelfJob = apiData.isSelfJob === true || (apiData.assignedAt && !apiData.workerId);
         const mappedBooking = {
           ...apiData,
           id: apiData._id || apiData.id,
@@ -95,9 +95,14 @@ const BookingTimeline = () => {
         // Custom logic for later stages
         let stage = statusMap[apiData.status] || 2;
         if (apiData.status === 'completed') {
-          if (isSettled) stage = 10; // Booking Complete
-          else if (isActuallyPaid || isSelfJob) stage = 9; // Final Settlement (Skip Pay Worker for self)
-          else stage = 8; // Pay Worker
+          // If worker job, jump to end (Stage 11) because intermediate payment steps are hidden/simplified
+          if (!isSelfJob) {
+            stage = 11;
+          } else {
+            // For self-jobs, follow the settlement flow
+            if (isSettled) stage = 11; // Final tick
+            else stage = 9; // Final Settlement stage
+          }
         }
 
         setCurrentStage(stage);
@@ -246,6 +251,48 @@ const BookingTimeline = () => {
     }
   };
 
+  async function handleVisitSite() {
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${booking.location?.lat || 22.7196},${booking.location?.lng || 75.8577}`;
+    window.open(url, '_blank');
+
+    try {
+      await updateBookingStatus(id, 'visited');
+      setCurrentStage(4);
+      // Reload booking to get latest state
+      const response = await getBookingById(id);
+      setBooking(prev => ({ ...prev, status: response.data.status }));
+    } catch (error) {
+      console.error('Error updating status to visited:', error);
+      // alert('Failed to update status');
+    }
+  }
+
+  const handleWorkDone = async () => {
+    try {
+      setActionLoading(true);
+      // If it's a worker job, go directly to 'completed' to skip billing for user
+      const targetStatus = booking?.isSelfJob ? 'work_done' : 'completed';
+      
+      await updateBookingStatus(id, targetStatus);
+      toast.success(booking?.isSelfJob ? 'Work marked as done' : 'Booking completed successfully');
+      
+      // Refresh data
+      const response = await getBookingById(id);
+      const apiData = response.data || response;
+      setBooking({
+        ...apiData,
+        id: apiData._id || apiData.id,
+        isSelfJob: apiData.isSelfJob || (apiData.assignedAt && !apiData.workerId)
+      });
+      window.location.reload();
+    } catch (error) {
+      console.error('Error updating status to work done:', error);
+      toast.error('Failed to update status. Please follow valid status flow.');
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
   const timelineStages = [
     {
       id: 1,
@@ -256,16 +303,19 @@ const BookingTimeline = () => {
     },
     {
       id: 2,
-      title: 'Booking Accepted',
-      icon: FiCheck,
+      title: (booking?.isBidding && booking?.status === 'bidding') ? 'USER IS WAITING' : 'Booking Accepted',
+      icon: (booking?.isBidding && booking?.status === 'bidding') ? FiClock : FiCheck,
       action: null,
-      description: 'You accepted the booking',
+      description: (booking?.isBidding && booking?.status === 'bidding') 
+        ? 'User is comparing quotes. Waiting for 5 mins.' 
+        : 'You accepted the booking',
     },
     {
       id: 3,
       title: 'Assigned',
       icon: FiUser,
-      action: currentStage === 2 ? () => navigate(`/vendor/booking/${id}/assign-worker`) : null,
+      // Block assignment if still bidding
+      action: (currentStage === 2 && booking?.status !== 'bidding') ? () => navigate(`/vendor/booking/${id}/assign-worker`) : null,
       description: booking?.assignedTo ? `Assigned to ${booking.assignedTo.name}` : 'Assign worker or start yourself',
     },
     {
@@ -286,7 +336,16 @@ const BookingTimeline = () => {
       id: 6,
       title: 'Work Done',
       icon: FiTool,
-      action: (currentStage === 5 && booking?.isSelfJob) ? () => setIsWorkDoneModalOpen(true) : null,
+      action: (() => {
+        // For self job, show the photo modal (the 'old' way)
+        if (booking?.isSelfJob) {
+          return currentStage === 5 ? () => setIsWorkDoneModalOpen(true) : null;
+        }
+        // For worker job, just mark it done directly (the 'simple' way)
+        return (booking?.assignedTo && currentStage >= 3 && booking?.status !== 'work_done' && booking?.status !== 'completed') 
+          ? handleWorkDone 
+          : null;
+      })(),
       description: 'Service work completed',
     },
     {
@@ -329,8 +388,15 @@ const BookingTimeline = () => {
       description: 'Booking successfully finalized',
     },
   ].filter(stage => {
+    // CRITICAL: If worker is assigned (not self), hide most tracking steps but KEEP Work Done
+    if (booking?.assignedTo && !booking?.isSelfJob) {
+      // Hide stages 4, 5, 7, 8, 9 for worker jobs. KEEP 1, 2, 3, 6, 10
+      if ([4, 5, 7, 8, 9].includes(stage.id)) return false;
+    }
+
     // Hide worker-specific stages for self jobs
     if (booking?.isSelfJob && stage.id === 8) return false;
+    
     return true;
   });
 
@@ -349,35 +415,6 @@ const BookingTimeline = () => {
     setOtpInput(newOtp);
     if (value && index < 3) document.getElementById(`otp-${index + 1}`).focus();
   };
-
-  async function handleVisitSite() {
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${booking.location?.lat || 22.7196},${booking.location?.lng || 75.8577}`;
-    window.open(url, '_blank');
-
-    try {
-      await updateBookingStatus(id, 'visited');
-      setCurrentStage(4);
-      // Reload booking to get latest state
-      const response = await getBookingById(id);
-      setBooking(prev => ({ ...prev, status: response.data.status }));
-    } catch (error) {
-      console.error('Error updating status to visited:', error);
-      // alert('Failed to update status');
-    }
-  }
-
-  async function handleWorkDone() {
-    try {
-      // Try to mark as completed or work_done if backend supports it
-      await updateBookingStatus(id, 'work_done');
-      setCurrentStage(5); // Update to stage 5
-      window.location.reload();
-    } catch (error) {
-      console.error('Error updating status to work done:', error);
-      toast.error('Failed to update status. Please follow valid status flow.');
-    }
-  }
-
 
 
   if (!booking) {

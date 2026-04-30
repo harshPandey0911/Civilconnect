@@ -60,7 +60,8 @@ const addToCart = async (req, res) => {
       vendorId,
       sectionTitle, // Brand name
       sectionIcon,  // Brand logo URL
-      card          // Card details snapshot
+      card,          // Card details snapshot
+      isPriceDisclosed
     } = req.body;
 
     console.log(`[AddToCart] Request details - Title: ${title}, Section: ${sectionTitle}`);
@@ -116,7 +117,8 @@ const addToCart = async (req, res) => {
         vendorId: vendorId || null,
         sectionTitle: sectionTitle || '',
         sectionIcon: sectionIcon || null,
-        card: card || null
+        card: card || null,
+        isPriceDisclosed: isPriceDisclosed !== undefined ? isPriceDisclosed : true
       };
 
       // Only add serviceId and categoryId if they are provided

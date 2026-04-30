@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { FiX, FiMapPin, FiClock, FiDollarSign, FiArrowRight, FiBell, FiAlertCircle, FiMinimize2, FiUsers } from 'react-icons/fi';
+import { FiX, FiMapPin, FiClock, FiDollarSign, FiArrowRight, FiBell, FiAlertCircle, FiMinimize2, FiUsers, FiCheck } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { vendorTheme as themeColors } from '../../../../theme';
-import { playAlertRing, stopAlertRing } from '../../../../utils/notificationSound';
+import { playAlertRing, stopAlertRing, playNotificationSound } from '../../../../utils/notificationSound';
 
 const BookingAlertCard = ({ booking, onAccept, onReject, onAssign, maxSearchTimeMins = 1 }) => {
-  // Calculate initial time synchronously instead of relying solely on useEffect
+  const [isWaiting, setIsWaiting] = useState(false);
+  const [loadingAction, setLoadingAction] = useState(null);
+
+  // Calculate initial time
   const calculateInitialRemaining = () => {
     try {
       if (booking?.expiresAt) {
@@ -15,127 +18,104 @@ const BookingAlertCard = ({ booking, onAccept, onReject, onAssign, maxSearchTime
           return Math.max(0, left);
         }
       }
-
-      const totalDurationMins = Number(maxSearchTimeMins) || 5;
-      const initialDurationSecs = totalDurationMins * 60;
-
-      if (booking?.createdAt) {
-        const start = new Date(booking.createdAt).getTime();
-        if (!isNaN(start)) {
-          const elapsed = Math.floor((Date.now() - start) / 1000);
-          return Math.max(0, initialDurationSecs - elapsed);
-        }
-      }
-
-      return initialDurationSecs;
-    } catch {
       return (Number(maxSearchTimeMins) || 1) * 60;
+    } catch {
+      return 60;
     }
   };
 
   const [timeLeft, setTimeLeft] = useState(calculateInitialRemaining());
-  const [loadingAction, setLoadingAction] = useState(null);
+
+  // Listen for user_waiting event
+  useEffect(() => {
+    const handleUserWaiting = (e) => {
+      const data = e.detail;
+      const bId = String(booking.id || booking._id);
+      if (String(data.bookingId) === bId) {
+        setIsWaiting(true);
+        setTimeLeft(300); // Reset to 5 minutes
+      }
+    };
+
+    window.addEventListener('vendorUserWaiting', handleUserWaiting);
+    return () => window.removeEventListener('vendorUserWaiting', handleUserWaiting);
+  }, [booking]);
+
+  // Timer logic
+  useEffect(() => {
+    if (!booking) return;
+
+    if (timeLeft <= 0) {
+      if (!isWaiting) {
+        onReject?.(booking.id || booking._id);
+        window.dispatchEvent(new CustomEvent('removeVendorBooking', { detail: { id: booking.id || booking._id } }));
+      }
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [timeLeft, isWaiting, booking, onReject]);
 
   const handleAction = async (actionFn, actionType) => {
     if (loadingAction) return;
     setLoadingAction(actionType);
     const bookingId = booking.id || booking._id;
-    localStorage.removeItem(`alert_start_${bookingId}`);
     try {
-      if (actionFn) await actionFn(bookingId);
+      if (actionType === 'accept') {
+        const isProduct = booking.serviceType === 'product' || booking.bookingType === 'product';
+        if (isProduct) {
+          const price = document.getElementById(`price-input-${bookingId}`)?.value;
+          const note = document.getElementById(`note-input-${bookingId}`)?.value;
+          await actionFn(bookingId, price, note);
+        } else {
+          await actionFn(bookingId);
+        }
+      } else {
+        await actionFn(bookingId);
+      }
     } catch (error) {
       console.error(error);
     } finally {
-      if (typeof window !== 'undefined') {
-        // Prevent immediate re-enabling if unmounted, handled by React state memory leak warning natively, but usually safe
-        setLoadingAction(null);
-      }
+      setLoadingAction(null);
     }
   };
 
-  useEffect(() => {
-    if (!booking) return;
-
-    const bookingId = booking.id || booking._id;
-    const totalDurationMins = Number(maxSearchTimeMins) || 5;
-    const initialDurationSecs = totalDurationMins * 60;
-
-    const calculateRemaining = () => {
-      try {
-        if (booking.expiresAt) {
-          const end = new Date(booking.expiresAt).getTime();
-          if (!isNaN(end)) {
-            const left = Math.floor((end - Date.now()) / 1000);
-            return Math.max(0, left);
-          }
-        }
-
-        if (booking.createdAt) {
-          const start = new Date(booking.createdAt).getTime();
-          if (!isNaN(start)) {
-            const elapsed = Math.floor((Date.now() - start) / 1000);
-            return Math.max(0, initialDurationSecs - elapsed);
-          }
-        }
-
-        return initialDurationSecs;
-      } catch (err) {
-        console.error("Timer calculation error:", err);
-        return 0;
-      }
-    };
-
-    const remaining = calculateRemaining();
-    setTimeLeft(remaining);
-
-    if (remaining <= 0) {
-      onReject?.(bookingId);
-      window.dispatchEvent(new CustomEvent('removeVendorBooking', { detail: { id: bookingId } }));
-      return;
-    }
-
-    const timer = setInterval(() => {
-      const currentRemaining = calculateRemaining();
-      setTimeLeft(currentRemaining);
-
-      if (currentRemaining <= 0) {
-        clearInterval(timer);
-        onReject?.(bookingId);
-        window.dispatchEvent(new CustomEvent('removeVendorBooking', { detail: { id: bookingId } }));
-      }
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [booking, onReject, booking.expiresAt, booking.createdAt, maxSearchTimeMins]);
-
+  const totalDurationSecs = isWaiting ? 300 : (Number(maxSearchTimeMins) || 1) * 60;
   const radius = 24;
   const circumference = 2 * Math.PI * radius;
-  // Progress relative to the total max search time to ensure the circle shrinks correctly
-  const totalDurationSecs = (Number(maxSearchTimeMins) || 5) * 60;
   const progress = (timeLeft / totalDurationSecs) * circumference;
   const dashoffset = circumference - progress;
 
+  const isProduct = booking.serviceType === 'product' || booking.bookingType === 'product';
+
   return (
-    <div className="bg-white w-full sm:w-[320px] flex-none rounded-[2rem] overflow-y-auto max-h-[85vh] shadow-[0_20px_40px_-10px_rgba(0,0,0,0.5)] relative scrollbar-hide snap-center">
+    <div className="bg-white w-full sm:w-[320px] flex-none rounded-[2.5rem] overflow-y-auto max-h-[85vh] shadow-[0_20px_40px_-10px_rgba(0,0,0,0.5)] relative scrollbar-hide snap-center">
       {/* Header Section */}
-      <div className="relative h-20 bg-gradient-to-br from-teal-600 to-emerald-700 flex flex-col items-center justify-center">
+      <div className={`relative h-24 flex flex-col items-center justify-center transition-colors duration-500 ${isWaiting ? 'bg-gradient-to-br from-indigo-600 to-purple-700' : 'bg-gradient-to-br from-teal-600 to-emerald-700'}`}>
         <div className="absolute inset-0 opacity-10 pointer-events-none">
-          <motion.div
-            animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.2, 0.1] }}
-            transition={{ duration: 4, repeat: Infinity }}
-            className="absolute -top-10 -left-10 w-32 h-32 bg-white rounded-full"
-          />
+          <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.2, 0.1] }} transition={{ duration: 4, repeat: Infinity }} className="absolute -top-10 -left-10 w-32 h-32 bg-white rounded-full" />
         </div>
 
-        <div className="flex items-center gap-2 relative z-10 w-full px-4 justify-center">
-          <div className="w-8 h-8 bg-white/10 backdrop-blur-xl rounded-lg border border-white/20 flex items-center justify-center shadow-md relative">
-            <FiBell className="w-4 h-4 text-white animate-bounce" />
-            <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-400 rounded-full border-2 border-white animate-pulse" />
+        <div className="flex items-center gap-3 relative z-10 w-full px-4 justify-center">
+          <div className="w-10 h-10 bg-white/10 backdrop-blur-xl rounded-xl border border-white/20 flex items-center justify-center shadow-md relative">
+            {isWaiting ? <FiClock className="w-5 h-5 text-white animate-pulse" /> : <FiBell className="w-5 h-5 text-white animate-bounce" />}
           </div>
           <div>
-            <h2 className="text-white text-lg font-black tracking-tight leading-none">New Order!</h2>
-            <div className="text-[8px] font-bold text-teal-100 uppercase tracking-widest mt-0.5">
-              Action Required Immediately
+            <h2 className="text-white text-lg font-black tracking-tight leading-none">
+              {isWaiting ? 'USER IS WAITING' : 'New Order!'}
+            </h2>
+            <div className="text-[8px] font-black text-white/70 uppercase tracking-widest mt-1">
+              {isWaiting ? 'Comparing quotes... 5:00' : 'Action Required Immediately'}
             </div>
           </div>
         </div>
@@ -143,95 +123,63 @@ const BookingAlertCard = ({ booking, onAccept, onReject, onAssign, maxSearchTime
 
       {/* Body Section */}
       <div className="px-5 py-4">
-        <div className="flex justify-center -mt-9 mb-3 relative z-20">
-          <div className="relative w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-xl p-0.5">
+        <div className="flex justify-center -mt-10 mb-4 relative z-20">
+          <div className="relative w-18 h-18 bg-white rounded-full flex items-center justify-center shadow-xl p-1">
             <svg className="absolute inset-0 w-full h-full -rotate-90 transform" viewBox="0 0 60 60">
               <circle cx="30" cy="30" r={radius} fill="none" stroke="#F3F4F6" strokeWidth="4" />
               <motion.circle
                 cx="30" cy="30" r={radius} fill="none"
-                stroke={timeLeft <= 10 ? '#EF4444' : '#059669'} strokeWidth="5"
+                stroke={isWaiting ? '#7C3AED' : (timeLeft <= 10 ? '#EF4444' : '#059669')} strokeWidth="5"
                 strokeDasharray={circumference} strokeDashoffset={dashoffset}
                 strokeLinecap="round" className="transition-all duration-1000 ease-linear"
               />
             </svg>
             <div className="text-center mt-0.5">
-              <span className={`text-lg font-black block leading-none ${timeLeft <= 20 ? 'text-red-500' : 'text-emerald-600'}`}>
+              <span className={`text-xl font-black block leading-none ${isWaiting ? 'text-indigo-600' : (timeLeft <= 20 ? 'text-red-500' : 'text-emerald-600')}`}>
                 {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
               </span>
-              <span className="text-[7px] font-bold text-gray-400 uppercase tracking-tighter block -mt-0.5">Mins Left</span>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center justify-center mb-4 bg-emerald-50 py-2 rounded-xl border border-emerald-100">
-          <div className="text-center">
-            <span className="text-[9px] font-black text-emerald-800/60 uppercase tracking-[0.1em] mb-0.5 block">Distance</span>
-            <div className="text-lg font-black text-emerald-700 tracking-tight flex items-center gap-1 justify-center">
-              <FiMapPin className="w-3.5 h-3.5" />
-              {booking.location?.distance || (booking.distance ? (String(booking.distance).includes('km') ? booking.distance : `${booking.distance} km`) : 'Near You')}
-            </div>
+        {isWaiting && (
+          <div className="mb-4 bg-indigo-50 border border-indigo-100 p-3 rounded-2xl animate-pulse">
+            <p className="text-[10px] font-black text-indigo-700 uppercase tracking-widest text-center">
+              Customer asked you to wait 5 mins while they review other quotes
+            </p>
           </div>
-        </div>
+        )}
 
         <div className="mb-4 space-y-2.5">
-          {/* Category & Urgent Badge */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-100 px-2 py-1 rounded-lg shadow-sm">
-              {booking.categoryIcon ? (
-                <img src={booking.categoryIcon} alt="Cat" className="w-4 h-4 object-contain" />
-              ) : (
-                <span className="w-4 h-4 flex items-center justify-center bg-gray-200 rounded-full text-[9px]">⚡</span>
-              )}
-              <span className="text-[10px] font-black tracking-widest text-gray-700 uppercase line-clamp-1 max-w-[120px]">
-                {booking.serviceCategory || booking.serviceId?.categoryId?.title || booking.serviceId?.category?.title || booking.categoryName || 'General Service'}
+            <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-100 px-2 py-1 rounded-lg">
+              <span className="text-[10px] font-black tracking-widest text-gray-700 uppercase">
+                {booking.serviceCategory || 'General Service'}
               </span>
             </div>
-            <div className="bg-red-50 border border-red-100 px-1.5 py-1 rounded-md">
-              <span className="text-[9px] font-black text-red-600 tracking-widest flex items-center gap-1 uppercase">
-                <FiBell className="w-3 h-3 animate-pulse" /> Urgent
-              </span>
+            <div className="flex items-center gap-1 text-[10px] font-black text-emerald-600 uppercase bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-100">
+               <FiMapPin /> {booking.location?.distance || 'Nearby'}
             </div>
           </div>
 
-          {/* Service Details Card */}
-          <div className="bg-white rounded-[1rem] p-3 border border-gray-100 shadow-sm relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-1 h-full bg-teal-500" />
-            <div className="pl-2">
-              <h4 className="text-[14px] font-black text-gray-900 leading-tight">
-                {booking.serviceName || booking.serviceType || booking.serviceId?.title || 'Service Request'}
-              </h4>
-              {(booking.brandName || booking.brandIcon) && (
-                <div className="flex items-center gap-1.5 mt-1.5 opacity-80">
-                  <span className="text-[9px] font-bold text-gray-500 uppercase">Brand:</span>
-                  <span className="text-[10px] font-black text-gray-800 uppercase tracking-wider">{booking.brandName}</span>
-                  <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase ${booking.serviceType === 'product' ? 'bg-blue-100 text-blue-600' : 'bg-teal-100 text-teal-600'}`}>
-                    {booking.serviceType === 'product' ? 'Product' : 'Service'}
-                  </span>
-                </div>
-              )}
+          <div className="bg-white rounded-[1.2rem] p-4 border border-gray-100 shadow-sm relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500" />
+            <h4 className="text-[15px] font-black text-gray-900 leading-tight">
+              {booking.serviceType === 'product' ? (booking.serviceName || booking.serviceId?.title) : (booking.serviceType || booking.serviceName || 'Service Request')}
+            </h4>
+            <div className="flex items-center gap-2 mt-2">
+              <span className="text-[10px] font-bold text-gray-400">Customer:</span>
+              <span className="text-[10px] font-black text-gray-800 uppercase">{booking.customerName}</span>
             </div>
           </div>
         </div>
 
-        <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 mb-5 text-xs space-y-2">
-          <div className="flex items-start gap-2">
-            <FiMapPin className="text-gray-400 w-3.5 h-3.5 shrink-0 mt-0.5" />
-            <span className="font-bold text-gray-800 leading-snug line-clamp-2">{booking.location?.address || booking.address?.addressLine1 || 'Address not available'}</span>
-          </div>
-          <div className="flex items-start gap-2 pt-2 border-t border-gray-200">
-            <FiClock className="text-gray-400 w-3.5 h-3.5 shrink-0 mt-0.5" />
-            <span className="font-bold text-gray-800">
-              {booking.timeSlot?.date || (booking.scheduledDate ? new Date(booking.scheduledDate).toLocaleDateString() : '')} {booking.timeSlot?.time || booking.scheduledTime || 'N/A'}
-            </span>
-          </div>
-        </div>
-
-        {/* Bidding Input Section */}
-        {booking.serviceType === 'product' && (booking.status?.toLowerCase() === 'bidding' || booking.bookingStatus?.toLowerCase() === 'bidding') && (
-          <div className="mb-5 space-y-3 p-3 bg-purple-50 rounded-2xl border border-purple-100 shadow-sm">
+        {/* Bidding/Quote Input for Products */}
+        {isProduct && (
+          <div className="mb-5 space-y-3 p-4 bg-purple-50 rounded-2xl border border-purple-100 shadow-sm">
             <div className="flex items-center gap-2 mb-1">
               <FiDollarSign className="w-3.5 h-3.5 text-purple-600" />
-              <span className="text-[10px] font-black text-purple-700 uppercase tracking-widest">Enter Your Quote</span>
+              <span className="text-[10px] font-black text-purple-700 uppercase tracking-widest">Your Best Quote</span>
             </div>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-purple-400 font-bold">₹</span>
@@ -250,37 +198,47 @@ const BookingAlertCard = ({ booking, onAccept, onReject, onAssign, maxSearchTime
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-2">
+        {!isProduct && (
+          <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 mb-6 text-xs space-y-2.5">
+            <div className="flex items-start gap-2">
+              <FiMapPin className="text-gray-400 w-4 h-4 shrink-0 mt-0.5" />
+              <span className="font-bold text-gray-800 leading-snug">{booking.location?.address || 'Address N/A'}</span>
+            </div>
+            <div className="flex items-start gap-2 pt-2 border-t border-gray-200/60">
+              <FiClock className="text-gray-400 w-4 h-4 shrink-0 mt-0.5" />
+              <span className="font-bold text-gray-800">{booking.timeSlot?.date} at {booking.timeSlot?.time}</span>
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-3">
           <button
             disabled={!!loadingAction}
-            onClick={() => {
-              const isBidding = booking.serviceType === 'product' && (booking.status?.toLowerCase() === 'bidding' || booking.bookingStatus?.toLowerCase() === 'bidding');
-              if (isBidding) {
-                const price = document.getElementById(`price-input-${booking.id || booking._id}`).value;
-                const note = document.getElementById(`note-input-${booking.id || booking._id}`).value;
-                handleAction((id) => onAccept(id, price, note), 'accept');
-              } else {
-                handleAction(onAccept, 'accept');
-              }
-            }}
-            className={`w-full py-3 rounded-xl text-white font-black text-sm shadow-md active:scale-95 transition-all flex items-center justify-center gap-2 col-span-2 disabled:opacity-50 ${
-              (booking.serviceType === 'product' && (booking.status?.toLowerCase() === 'bidding' || booking.bookingStatus?.toLowerCase() === 'bidding')) ? 'bg-purple-600 hover:bg-purple-700' : 'bg-gray-900 hover:bg-gray-800'
-            }`}>
-            {loadingAction === 'accept' ? 'Processing...' : ((booking.serviceType === 'product' && (booking.status?.toLowerCase() === 'bidding' || booking.bookingStatus?.toLowerCase() === 'bidding')) ? 'Send Quote' : 'Accept (Myself)')}
+            onClick={() => handleAction(onAccept, 'accept')}
+            className={`w-full py-4 rounded-2xl text-white font-black text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 col-span-2 disabled:opacity-50 ${isProduct ? 'bg-purple-600 shadow-purple-200' : 'bg-gray-900 shadow-gray-200'}`}
+          >
+            {loadingAction === 'accept' ? 'Processing...' : (isProduct ? 'Send Quote' : (isWaiting ? 'Confirm Interest' : 'Accept (Myself)'))}
           </button>
-          <button
-            disabled={!!loadingAction}
-            onClick={() => handleAction(onAssign, 'assign')}
-            className="w-full py-2.5 rounded-xl text-white font-black text-[11px] shadow-sm active:scale-95 transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
-            style={{ background: themeColors.button }}>
-            <FiUsers className="w-3.5 h-3.5" /> {loadingAction === 'assign' ? '...' : 'Forward'}
-          </button>
-          <button
-            disabled={!!loadingAction}
-            onClick={() => handleAction(onReject, 'reject')}
-            className="w-full py-2.5 rounded-xl bg-red-50 border border-red-100 text-red-500 font-bold text-[11px] active:scale-95 transition-all uppercase flex items-center justify-center gap-1.5 disabled:opacity-50">
-            {loadingAction === 'reject' ? '...' : <><FiX className="w-3.5 h-3.5" /> Decline</>}
-          </button>
+          
+          {!isWaiting && (
+            <>
+              <button
+                disabled={!!loadingAction}
+                onClick={() => handleAction(onAssign, 'assign')}
+                className="w-full py-3 rounded-xl text-white font-black text-[10px] uppercase tracking-widest shadow-sm active:scale-95 transition-all disabled:opacity-50"
+                style={{ background: themeColors.button }}
+              >
+                Forward
+              </button>
+              <button
+                disabled={!!loadingAction}
+                onClick={() => handleAction(onReject, 'reject')}
+                className="w-full py-3 rounded-xl bg-red-50 border border-red-100 text-red-500 font-bold text-[10px] uppercase tracking-widest active:scale-95 transition-all disabled:opacity-50"
+              >
+                Decline
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -302,8 +260,7 @@ const BookingAlertModal = ({ isOpen, booking, bookings, onAccept, onReject, onAs
           {onMinimize && (
             <button
               onClick={() => { stopAlertRing(); onMinimize(); }}
-              className="absolute top-4 right-4 z-50 p-2 bg-black/20 hover:bg-black/30 backdrop-blur-md rounded-full text-white transition-all active:scale-95"
-              title="Minimize Alert"
+              className="absolute top-6 right-6 z-50 p-2.5 bg-white/10 hover:bg-white/20 backdrop-blur-xl rounded-full text-white transition-all active:scale-95 border border-white/20"
             >
               <FiMinimize2 className="w-5 h-5" />
             </button>
@@ -323,12 +280,6 @@ const BookingAlertModal = ({ isOpen, booking, bookings, onAccept, onReject, onAs
               ))}
             </div>
           </div>
-
-          {alertsArray.length > 1 && (
-            <div className="absolute bottom-10 left-0 right-0 flex justify-center text-white text-sm font-medium animate-pulse drop-shadow-lg">
-              Swipe to see all {alertsArray.length} alerts →
-            </div>
-          )}
         </motion.div>
       )}
     </AnimatePresence>

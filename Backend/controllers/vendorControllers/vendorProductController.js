@@ -26,6 +26,7 @@ const getVendorProducts = async (req, res) => {
         basePrice: p.basePrice || 0,
         discountPrice: p.discountPrice || 0,
         status: p.status,
+        isPriceDisclosed: p.isPriceDisclosed ?? true,
         category: p.categoryIds?.[0]?.title || 'Uncategorized',
         createdAt: p.createdAt
       }))
@@ -47,7 +48,7 @@ const createVendorProduct = async (req, res) => {
       return res.status(400).json({ success: false, errors: errors.array() });
     }
 
-    const { title, description, basePrice, discountPrice, iconUrl, categoryId, type } = req.body;
+    const { title, description, basePrice, discountPrice, iconUrl, categoryId, type, isPriceDisclosed } = req.body;
 
     const slug = title.trim().toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-');
     const uniqueSlug = `${slug}-${Date.now().toString().slice(-4)}`; // ensure uniqueness
@@ -65,7 +66,8 @@ const createVendorProduct = async (req, res) => {
       discountPrice: Number(discountPrice) || 0,
       status: SERVICE_STATUS.ACTIVE,
       vendorId: req.user.id,
-      type: type || 'service'
+      type: type || 'service',
+      isPriceDisclosed: isPriceDisclosed !== undefined ? isPriceDisclosed : true
     });
 
     // Create a default Service under this Brand so it can be booked
@@ -78,7 +80,8 @@ const createVendorProduct = async (req, res) => {
       iconUrl: iconUrl || null,
       basePrice: Number(basePrice) || 0,
       status: SERVICE_STATUS.ACTIVE,
-      type: type || 'service'
+      type: type || 'service',
+      isPriceDisclosed: isPriceDisclosed !== undefined ? isPriceDisclosed : true
     });
 
     res.status(201).json({

@@ -630,55 +630,71 @@ export default function BookingDetails() {
       <main className="px-4 py-6">
         {/* Bidding Section */}
         {booking.status?.toLowerCase() === 'bidding' && !booking.vendorId && (
-          <div className="bg-gradient-to-br from-purple-600 to-indigo-700 rounded-3xl p-6 mb-6 shadow-xl text-white relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16 blur-2xl"></div>
-            <h3 className="text-xl font-black mb-2">Submit Your Quote</h3>
-            <p className="text-sm text-purple-100 mb-6 font-medium">
-              This category requires bidding. Enter your best price to get hired.
-            </p>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-purple-200 mb-1">Your Price (₹)</label>
-                <div className="relative">
-                  <FiDollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-purple-300" />
-                  <input
-                    type="number"
-                    placeholder="Enter total price"
-                    className="w-full bg-white/10 border border-white/20 rounded-2xl py-4 pl-12 pr-4 text-white font-bold placeholder:text-white/40 focus:bg-white/20 focus:border-white/40 outline-none transition-all"
-                    id="bidPriceInput"
-                  />
+          <>
+            {!booking.hasSubmittedBid ? (
+              <div className="bg-gradient-to-br from-purple-600 to-indigo-700 rounded-3xl p-6 mb-6 shadow-xl text-white relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16 blur-2xl"></div>
+                <h3 className="text-xl font-black mb-2">Submit Your Quote</h3>
+                <p className="text-sm text-purple-100 mb-6 font-medium">
+                  This category requires bidding. Enter your best price to get hired.
+                </p>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-purple-200 mb-1">Your Price (₹)</label>
+                    <div className="relative">
+                      <FiDollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-purple-300" />
+                      <input
+                        type="number"
+                        placeholder="Enter total price"
+                        className="w-full bg-white/10 border border-white/20 rounded-2xl py-4 pl-12 pr-4 text-white font-bold placeholder:text-white/40 focus:bg-white/20 focus:border-white/40 outline-none transition-all"
+                        id="bidPriceInput"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-purple-200 mb-1">Notes to Customer (Optional)</label>
+                    <textarea
+                      placeholder="e.g. Price includes delivery"
+                      className="w-full bg-white/10 border border-white/20 rounded-2xl py-4 px-4 text-white font-medium placeholder:text-white/40 focus:bg-white/20 focus:border-white/40 outline-none transition-all min-h-[100px]"
+                      id="bidNoteInput"
+                    />
+                  </div>
+                  <button
+                    onClick={async () => {
+                      const price = document.getElementById('bidPriceInput').value;
+                      const note = document.getElementById('bidNoteInput').value;
+                      if (!price) return toast.error('Please enter a price');
+                      
+                      try {
+                        const { submitBid } = await import('../../services/bookingService');
+                        await submitBid(id, price, note);
+                        toast.success('Bid submitted successfully!');
+                        window.location.reload();
+                      } catch (err) {
+                        toast.error(err.response?.data?.message || 'Failed to submit bid');
+                      }
+                    }}
+                    className="w-full py-4 bg-white text-indigo-700 rounded-2xl font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all"
+                  >
+                    Send Quote
+                  </button>
                 </div>
               </div>
-              <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-purple-200 mb-1">Notes to Customer (Optional)</label>
-                <textarea
-                  placeholder="e.g. Price includes delivery"
-                  className="w-full bg-white/10 border border-white/20 rounded-2xl py-4 px-4 text-white font-medium placeholder:text-white/40 focus:bg-white/20 focus:border-white/40 outline-none transition-all min-h-[100px]"
-                  id="bidNoteInput"
-                />
+            ) : (
+              <div className="bg-white border-2 border-indigo-100 rounded-3xl p-6 mb-6 shadow-sm flex flex-col items-center text-center">
+                <div className="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 mb-4">
+                  <FiCheckCircle className="w-8 h-8" />
+                </div>
+                <h3 className="text-xl font-black text-gray-900 mb-1">Quote Sent!</h3>
+                <p className="text-sm text-gray-500 mb-4">You have already submitted your best price. Waiting for customer choice.</p>
+                <div className="bg-indigo-50 px-6 py-3 rounded-2xl">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400 block mb-1">Your Quote</span>
+                  <span className="text-3xl font-black text-indigo-600">₹{booking.myBid?.price}</span>
+                </div>
               </div>
-              <button
-                onClick={async () => {
-                  const price = document.getElementById('bidPriceInput').value;
-                  const note = document.getElementById('bidNoteInput').value;
-                  if (!price) return toast.error('Please enter a price');
-                  
-                  try {
-                    const { submitBid } = await import('../../services/bookingService');
-                    await submitBid(id, price, note);
-                    toast.success('Bid submitted successfully!');
-                    window.location.reload();
-                  } catch (err) {
-                    toast.error(err.response?.data?.message || 'Failed to submit bid');
-                  }
-                }}
-                className="w-full py-4 bg-white text-indigo-700 rounded-2xl font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all"
-              >
-                Send Quote
-              </button>
-            </div>
-          </div>
+            )}
+          </>
         )}
         {/* Service Type Card */}
         <div

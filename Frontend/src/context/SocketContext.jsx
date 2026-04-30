@@ -348,6 +348,13 @@ export const SocketProvider = ({ children }) => {
         window.dispatchEvent(new Event('vendorJobsUpdated'));
         window.dispatchEvent(new Event('vendorStatsUpdated'));
       });
+
+      // Listen for user_waiting - when user clicks "Wait" on a quote
+      newSocket.on('user_waiting', (data) => {
+        // console.log('⏳ User is waiting for more quotes:', data);
+        if (isSoundEnabled('vendor')) playNotificationSound();
+        window.dispatchEvent(new CustomEvent('vendorUserWaiting', { detail: data }));
+      });
     }
     // Listen for New Bid Received (User Side)
     if (userType === 'user') {

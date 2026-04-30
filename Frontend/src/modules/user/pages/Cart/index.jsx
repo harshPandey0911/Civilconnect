@@ -258,7 +258,13 @@ const Cart = () => {
                         <div className="flex-1 min-w-0">
                           <h3 className="text-base font-bold text-black mb-1">{category}</h3>
                           <p className="text-sm text-gray-600">
-                            {serviceCount} {serviceCount === 1 ? 'service' : 'services'} • ₹{categoryTotal.toLocaleString('en-IN')}
+                            {serviceCount} {serviceCount === 1 ? 'service' : 'services'}
+                            {items.some(i => i.isPriceDisclosed !== false) && (
+                              <> • ₹{categoryTotal.toLocaleString('en-IN')}</>
+                            )}
+                            {items.some(i => i.isPriceDisclosed === false) && (
+                              <span className="text-[10px] ml-1 bg-gray-100 px-1.5 py-0.5 rounded text-gray-500 uppercase font-black tracking-tighter">Partial</span>
+                            )}
                           </p>
                         </div>
                       </div>
@@ -286,7 +292,11 @@ const Cart = () => {
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
                             <span className="text-sm font-semibold text-black">
-                              ₹{(item.price || 0).toLocaleString('en-IN')}
+                              {item.isPriceDisclosed !== false ? (
+                                <>₹{(item.price || 0).toLocaleString('en-IN')}</>
+                              ) : (
+                                <span className="text-[10px] text-gray-400 font-black uppercase tracking-tighter bg-gray-50 px-2 py-0.5 rounded border border-gray-100">Not Disclosed</span>
+                              )}
                             </span>
                             <button
                               onClick={() => handleDelete(item._id || item.id)}

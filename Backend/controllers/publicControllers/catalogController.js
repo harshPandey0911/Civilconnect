@@ -121,7 +121,8 @@ const getPublicBrands = async (req, res) => {
         categoryId: brand.categoryIds && brand.categoryIds.length > 0 ? brand.categoryIds[0].toString() : null,
         categoryIds: (brand.categoryIds || []).map(id => id.toString()),
         sections: brand.sections || [],
-        type: brand.type || 'service'
+        type: brand.type || 'service',
+        isPriceDisclosed: brand.isPriceDisclosed ?? true
       }))
     });
   } catch (error) {
@@ -190,7 +191,8 @@ const getPublicBrandBySlug = async (req, res) => {
         imageUrl: svc.iconUrl || brand.iconUrl || '',
         features: svc.description ? [svc.description] : [],
         duration: "60 min", // Default duration
-        type: svc.type || 'service'
+        type: svc.type || 'service',
+        isPriceDisclosed: svc.isPriceDisclosed ?? true
       }))
     };
 
@@ -218,7 +220,8 @@ const getPublicBrandBySlug = async (req, res) => {
         paymentOffersEnabled: false
       },
       sections: brandServices.length > 0 ? [servicesSection] : [],
-      type: brand.type || 'service'
+      type: brand.type || 'service',
+      isPriceDisclosed: brand.isPriceDisclosed ?? true
     };
 
     res.status(200).json({
@@ -282,7 +285,8 @@ const getPublicServices = async (req, res) => {
         brandId: svc.brandId?._id,
         brandName: svc.brandId?.title,
         brandIcon: svc.brandId?.iconUrl,
-        type: svc.type || 'service'
+        type: svc.type || 'service',
+        isPriceDisclosed: svc.isPriceDisclosed ?? true
       }))
     });
   } catch (error) {

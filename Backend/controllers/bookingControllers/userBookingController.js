@@ -295,6 +295,7 @@ const createBooking = async (req, res) => {
     }
 
     const isBiddingRequired = !!(finalCategory?.isBiddingEnabled || finalAmount === 0 || service.type === 'product');
+    const biddingDeadline = isBiddingRequired ? new Date(Date.now() + 5 * 60 * 1000) : null;
 
     const booking = await Booking.create({
       bookingNumber,
@@ -339,7 +340,10 @@ const createBooking = async (req, res) => {
       serviceType: service.type || 'service',
       paymentMethod: isBiddingRequired ? 'bidding' : (paymentMethod || null),
       status: isBiddingRequired ? BOOKING_STATUS.BIDDING : bookingStatus,
-      paymentStatus: isBiddingRequired ? PAYMENT_STATUS.PENDING : bookingPaymentStatus
+      paymentStatus: isBiddingRequired ? PAYMENT_STATUS.PENDING : bookingPaymentStatus,
+      isBidding: isBiddingRequired,
+      biddingDeadline: biddingDeadline,
+      expiresAt: new Date(Date.now() + 1 * 60 * 1000) // 1 minute initial search
     });
 
     // --- IMMEDIATE RESPONSE ---

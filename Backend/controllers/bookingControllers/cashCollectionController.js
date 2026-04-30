@@ -139,10 +139,10 @@ exports.initiateCashCollection = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Booking not found' });
     }
 
-    // Allow cash, pay_at_home, online (if user changes mind), AND plan_benefit (for final bill flow)
-    const allowedMethods = ['cash', 'pay_at_home', 'plan_benefit', 'online'];
+    // Allow cash, pay_at_home, online, plan_benefit AND bidding (for material/bidding jobs)
+    const allowedMethods = ['cash', 'pay_at_home', 'plan_benefit', 'online', 'bidding'];
     if (!allowedMethods.includes(booking.paymentMethod)) {
-      return res.status(400).json({ success: false, message: 'This booking is not eligible for cash collection' });
+      return res.status(400).json({ success: false, message: `This booking (${booking.paymentMethod}) is not eligible for cash collection` });
     }
 
     // Optional: Update final total and extra items if provided during initiation
