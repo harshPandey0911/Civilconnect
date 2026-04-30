@@ -43,6 +43,7 @@ const Signup = lazyLoad(() => import('../pages/signup'));
 const PendingApproval = lazyLoad(() => import('../pages/PendingApproval'));
 const PoliceVerificationSelection = lazyLoad(() => import('../pages/PoliceVerification/Selection'));
 const PoliceVerificationUpload = lazyLoad(() => import('../pages/PoliceVerification/Upload'));
+const SubscriptionSelection = lazyLoad(() => import('../pages/Subscription/SubscriptionSelection'));
 const Dashboard = lazyLoad(() => import('../pages/Dashboard'));
 const BookingAlert = lazyLoad(() => import('../pages/BookingAlert'));
 const BookingAlerts = lazyLoad(() => import('../pages/BookingAlerts'));
@@ -87,6 +88,7 @@ const VendorRoutes = () => {
   const shouldHideBottomNav = location.pathname === '/vendor/login' ||
     location.pathname === '/vendor/signup' ||
     location.pathname === '/vendor/pending-approval' ||
+    location.pathname === '/vendor/subscription' ||
     location.pathname.includes('/police-verification/') ||
     location.pathname.endsWith('/map') ||
     location.pathname.includes('/booking-alert/');
@@ -106,6 +108,7 @@ const VendorRoutes = () => {
               <Route path="pending-approval" element={<PendingApproval />} />
               <Route path="police-verification/selection" element={<PoliceVerificationSelection />} />
               <Route path="police-verification/upload" element={<PoliceVerificationUpload />} />
+              <Route path="subscription" element={<SubscriptionSelection />} />
 
               {/* Protected routes (auth required) */}
               <Route path="/" element={<ProtectedRoute userType="vendor"><Navigate to="dashboard" replace /></ProtectedRoute>} />

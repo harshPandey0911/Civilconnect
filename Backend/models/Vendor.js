@@ -52,6 +52,30 @@ const vendorSchema = new mongoose.Schema({
     type: [String],
     default: []
   },
+  subscription: {
+    planId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'SubscriptionPlan',
+      default: null
+    },
+    startDate: {
+      type: Date,
+      default: null
+    },
+    endDate: {
+      type: Date,
+      default: null
+    },
+    status: {
+      type: String,
+      enum: ['active', 'expired', 'inactive'],
+      default: 'inactive'
+    }
+  },
+  isSubscriptionActive: {
+    type: Boolean,
+    default: false
+  },
   aadhar: {
     number: {
       type: String,

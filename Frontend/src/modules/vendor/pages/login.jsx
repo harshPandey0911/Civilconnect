@@ -167,10 +167,25 @@ const VendorLogin = () => {
               navigate('/vendor/police-verification/selection', { state: { vendorId } });
             } else if (method === 'self' && status === 'pending') {
               navigate('/vendor/police-verification/upload', { state: { vendorId } });
+            } else if (status === 'approved' || method === 'admin') {
+              // Police verification is handled, now check subscription
+              if (!response.vendor?.isSubscriptionActive) {
+                navigate('/vendor/subscription', { state: { vendorId } });
+              } else {
+                navigate('/vendor/dashboard');
+              }
             } else {
-              // Includes method === 'admin' OR status === 'submitted' OR status === 'rejected' (handled above)
+              // Includes status === 'submitted'
               navigate('/vendor/pending-approval');
             }
+            return;
+          }
+
+          // Final fallback for already approved vendors
+          if (!response.vendor?.isSubscriptionActive) {
+            const vendorId = response.vendor.id;
+            sessionStorage.setItem('pendingVendorId', vendorId);
+            navigate('/vendor/subscription', { state: { vendorId } });
             return;
           }
 

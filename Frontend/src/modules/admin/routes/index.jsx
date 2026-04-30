@@ -31,6 +31,7 @@ const Scrap = lazy(() => import('../pages/Scrap'));
 const Settlements = lazy(() => import('../pages/Settlements'));
 const Reviews = lazy(() => import('../pages/Reviews'));
 const PoliceVerificationManagement = lazy(() => import('../pages/Vendors/PoliceVerificationManagement'));
+const VendorSubscriptionManagement = lazy(() => import('../pages/VendorSubscriptions/SubscriptionManagement'));
 
 
 
@@ -61,6 +62,7 @@ const AdminRoutes = () => {
           <Route path="users/*" element={<Users />} />
           <Route path="vendors/*" element={<Vendors />} />
           <Route path="police-verification" element={<PoliceVerificationManagement />} />
+          <Route path="vendor-subscriptions" element={<VendorSubscriptionManagement />} />
           <Route path="workers/*" element={<Workers />} />
           <Route path="bookings" element={<Bookings />} />
           <Route path="bookings/tracking" element={<BookingTracking />} />

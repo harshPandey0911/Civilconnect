@@ -35,6 +35,15 @@
     ]
   },
   {
+    "title": "Vendor Subscriptions",
+    "route": "/admin/vendor-subscriptions",
+    "allowedRoles": [
+      "super_admin",
+      "admin"
+    ],
+    "children": []
+  },
+  {
     "title": "Workers",
     "route": "/admin/workers",
     "allowedRoles": [

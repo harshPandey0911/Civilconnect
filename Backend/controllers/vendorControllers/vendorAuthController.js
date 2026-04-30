@@ -154,7 +154,8 @@ const verifyLogin = async (req, res) => {
           vendor: { 
             id: vendor._id,
             adminApproval: 'pending',
-            policeVerification: vendor.policeVerification
+            policeVerification: vendor.policeVerification,
+            isSubscriptionActive: vendor.isSubscriptionActive
           }
         });
       }
@@ -585,7 +586,7 @@ const refreshToken = async (req, res) => {
 const getRegistrationStatus = async (req, res) => {
   try {
     const { vendorId } = req.params;
-    const vendor = await Vendor.findById(vendorId).select('approvalStatus policeVerification rejectedReason');
+    const vendor = await Vendor.findById(vendorId).select('approvalStatus policeVerification rejectedReason isSubscriptionActive');
     
     if (!vendor) {
       return res.status(404).json({ success: false, message: 'Vendor not found' });
@@ -595,7 +596,8 @@ const getRegistrationStatus = async (req, res) => {
       success: true,
       approvalStatus: vendor.approvalStatus,
       policeVerification: vendor.policeVerification,
-      rejectedReason: vendor.rejectedReason
+      rejectedReason: vendor.rejectedReason,
+      isSubscriptionActive: vendor.isSubscriptionActive
     });
   } catch (error) {
     console.error('Get registration status error:', error);

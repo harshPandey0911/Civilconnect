@@ -61,7 +61,8 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['set-cookie', 'x-rtb-fingerprint-id', 'request-id']
 }));
 
 // CORS configuration finished above
@@ -191,6 +192,7 @@ app.use('/api/vendors/products', require('./routes/vendor-routes/product.routes'
 // app.use('/api/vendors/training', require('./routes/vendor-routes/training.routes'));
 app.use('/api/vendors/support', require('./routes/vendor-routes/support.routes'));
 app.use('/api/vendors/verification', require('./routes/vendor-routes/verification.routes'));
+app.use('/api/vendors/subscription', require('./routes/vendor-routes/subscription.routes'));
 
 // Worker routes
 app.use('/api/workers/auth', require('./routes/worker-routes/auth.routes'));
@@ -217,6 +219,7 @@ app.use('/api/admin', require('./routes/admin-routes/paymentManagement.routes'))
 app.use('/api/admin', require('./routes/admin-routes/transactionManagement.routes'));
 app.use('/api/admin', require('./routes/admin-routes/upload.routes'));
 app.use('/api/admin', require('./routes/admin-routes/planManagement.routes'));
+app.use('/api/admin/vendor-subscriptions', require('./routes/admin-routes/vendorSubscriptionPlan.routes'));
 app.use('/api/admin', require('./routes/admin-routes/settings.routes'));
 app.use('/api/admin', require('./routes/admin-routes/reviewManagement.routes'));
 app.use('/api/admin', require('./routes/admin-routes/reportManagement.routes'));

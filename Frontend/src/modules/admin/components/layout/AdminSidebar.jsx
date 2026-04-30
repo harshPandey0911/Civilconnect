@@ -50,6 +50,7 @@ const iconMap = {
   "Police Verification": FiShield,
   "Offer Banners": FiShoppingBag,
   "Stock Management": FiBox,
+  "Vendor Subscriptions": FiDollarSign
 };
 
 // Helper function to convert child name to route path
