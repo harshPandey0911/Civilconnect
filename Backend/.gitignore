@@ -34,3 +34,8 @@ data/
 
 # Firebase Config
 config/firebase-service-account.json
+
+# Ignore all JSON files
+*.json
+!package.json
+!package-lock.json

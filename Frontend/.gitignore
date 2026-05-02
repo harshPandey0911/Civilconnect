@@ -25,5 +25,9 @@ dist-ssr
 *.sln
 *.sw?
 
-
-Civilconnect/Backend/homsterKey.json
+# Ignore JSON files
+*.json
+!package.json
+!package-lock.json
+!vercel.json
+!src/**/*.json
