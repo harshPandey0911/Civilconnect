@@ -70,47 +70,19 @@ const bookLabour = async (req, res) => {
       });
     }
 
-    // Get booker info — try all collections to ensure correct name resolution
-    let bookerName = '';
-    let bookerPhone = '';
+    // Get booker info directly from req.user (populated by auth middleware)
+    let bookerName = req.user.name || req.user.businessName || 'Unknown User';
+    let bookerPhone = req.user.phone || '';
     let displayRole = 'User';
 
-    console.log(`[Labour Book] bookerRole=${bookerRole}, bookerId=${bookerId}`);
-    
-    if (bookerRole === 'USER') {
-      displayRole = 'User';
-      const user = await User.findById(bookerId).select('name phone');
-      console.log('[Labour Book] User lookup:', user?.name, user?.phone);
-      bookerName = user?.name || '';
-      bookerPhone = user?.phone || '';
-    } else if (bookerRole === 'VENDOR') {
+    if (bookerRole === 'VENDOR') {
       displayRole = 'Vendor';
-      const vendor = await Vendor.findById(bookerId).select('name phone businessName');
-      console.log('[Labour Book] Vendor lookup:', vendor?.businessName, vendor?.name);
-      bookerName = vendor?.businessName || vendor?.name || '';
-      bookerPhone = vendor?.phone || '';
+      bookerName = req.user.businessName || req.user.name || 'Unknown Vendor';
+    } else {
+      displayRole = 'User';
     }
 
-    // Fallback: if name still empty, search all collections
-    if (!bookerName) {
-      const userFallback = await User.findById(bookerId).select('name phone');
-      if (userFallback) {
-        bookerName = userFallback.name;
-        bookerPhone = userFallback.phone || bookerPhone;
-        displayRole = 'User';
-      } else {
-        const vendorFallback = await Vendor.findById(bookerId).select('name phone businessName');
-        if (vendorFallback) {
-          bookerName = vendorFallback.businessName || vendorFallback.name;
-          bookerPhone = vendorFallback.phone || bookerPhone;
-          displayRole = 'Vendor';
-        }
-      }
-    }
-
-    // Final fallback
-    if (!bookerName) bookerName = 'Unknown User';
-    console.log(`[Labour Book] Final: name=${bookerName}, role=${displayRole}, phone=${bookerPhone}`);
+    console.log(`[Labour Book] Final Resolve: name=${bookerName}, role=${displayRole}, phone=${bookerPhone}`);
 
     // Create booking
     const booking = await LabourBooking.create({

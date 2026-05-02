@@ -54,23 +54,9 @@ const LabourDashboard = () => {
     socket.on('labour_booking_request', (data) => {
       console.log('[Labour] New booking request:', data);
       setBookingPopup(data);
-      setPopupCountdown(30);
       // Play shared vendor alert mp3 (looped)
       playAlertRing(true);
-      
-      // Start 30s countdown
-      clearInterval(popupTimerRef.current);
-      popupTimerRef.current = setInterval(() => {
-        setPopupCountdown(prev => {
-          if (prev <= 1) {
-            clearInterval(popupTimerRef.current);
-            setBookingPopup(null); // auto dismiss
-            stopAlertRing();
-            return 30;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+      startPopupTimer();
     });
 
     socket.on('disconnect', () => {
@@ -185,11 +171,40 @@ const LabourDashboard = () => {
       });
       setBookingPopup(null);
       toast.success('Booking declined');
+      fetchRecentBookings();
     } catch {
       toast.error('Failed to reject');
     } finally {
       setActionLoading(false);
     }
+  };
+
+  const startPopupTimer = () => {
+    clearInterval(popupTimerRef.current);
+    setPopupCountdown(30);
+    popupTimerRef.current = setInterval(() => {
+      setPopupCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(popupTimerRef.current);
+          setBookingPopup(null);
+          stopAlertRing();
+          return 30;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const handleReopenPopup = (b) => {
+    setBookingPopup({
+      bookingId: b._id,
+      bookerName: b.bookedByName,
+      bookerPhone: b.bookedByPhone,
+      bookerRole: b.bookedByRole,
+      note: b.note,
+      createdAt: b.createdAt
+    });
+    startPopupTimer();
   };
 
   const handleLogout = () => {
@@ -301,9 +316,17 @@ const LabourDashboard = () => {
           ) : (
             <div className="space-y-3">
               {recentBookings.map(b => (
-                <div key={b._id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-2xl border border-gray-100">
-                  <div className="w-10 h-10 rounded-xl bg-teal-100 flex items-center justify-center flex-shrink-0">
-                    <FiUser className="w-4 h-4 text-teal-600" />
+                <div 
+                  key={b._id} 
+                  onClick={() => b.status === 'pending' && handleReopenPopup(b)}
+                  className={`flex items-center gap-3 p-3 bg-gray-50 rounded-2xl border border-gray-100 transition-all ${
+                    b.status === 'pending' ? 'cursor-pointer hover:bg-amber-50 active:scale-[0.98] border-amber-100' : ''
+                  }`}
+                >
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                    b.status === 'pending' ? 'bg-amber-100 text-amber-600' : 'bg-teal-100 text-teal-600'
+                  }`}>
+                    <FiUser className="w-4 h-4" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-black text-gray-900 text-sm truncate">{b.bookedByName || 'Customer'}</p>
@@ -313,7 +336,7 @@ const LabourDashboard = () => {
                     <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider ${
                       b.status === 'accepted' ? 'bg-blue-100 text-blue-700' :
                       b.status === 'completed' ? 'bg-green-100 text-green-700' :
-                      b.status === 'pending' ? 'bg-amber-100 text-amber-700' :
+                      b.status === 'pending' ? 'bg-amber-500 text-white shadow-sm animate-pulse' :
                       'bg-red-100 text-red-700'
                     }`}>
                       {b.status}
@@ -337,68 +360,63 @@ const LabourDashboard = () => {
 
       {/* Booking Request Popup */}
       {bookingPopup && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end justify-center p-4">
-          <div className="w-full max-w-md bg-white rounded-[2.5rem] p-6 shadow-2xl animate-in slide-in-from-bottom-4 duration-300">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4">
+          <div className="w-full max-w-[320px] bg-white rounded-[2.5rem] p-4 shadow-2xl animate-in fade-in zoom-in duration-300 border border-white/20">
             {/* Animated ring */}
-            <div className="flex items-center justify-center mb-5">
+            <div className="flex items-center justify-center mb-2">
               <div className="relative">
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-teal-400 to-emerald-600 flex items-center justify-center shadow-xl">
-                  <HiLightningBolt className="w-9 h-9 text-white" />
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-teal-400 to-emerald-600 flex items-center justify-center shadow-xl">
+                  <HiLightningBolt className="w-6 h-6 text-white" />
                 </div>
                 <div className="absolute inset-0 rounded-full border-4 border-teal-400 animate-ping opacity-40" />
               </div>
             </div>
-
-            <div className="text-center mb-2">
-              <span className="inline-block bg-red-100 text-red-600 text-xs font-black px-3 py-1 rounded-full uppercase tracking-widest mb-3">
+ 
+            <div className="text-center mb-3">
+              <span className="inline-block bg-red-100 text-red-600 text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest mb-1">
                 New Booking Request
               </span>
-              <h2 className="text-2xl font-black text-gray-900">Incoming!</h2>
-              <p className="text-gray-500 text-sm mt-1">Someone wants to book you</p>
+              <h2 className="text-lg font-black text-gray-900 leading-tight">Incoming!</h2>
+              <p className="text-gray-400 text-[10px] font-bold uppercase tracking-tight">Someone wants to book you</p>
             </div>
-
-            <div className="bg-gray-50 rounded-2xl p-4 mb-5 space-y-2">
+ 
+            <div className="bg-gray-50 rounded-2xl p-3 mb-3 border border-gray-100">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-teal-100 flex items-center justify-center flex-shrink-0">
-                  <FiUser className="w-5 h-5 text-teal-600" />
+                <div className="w-8 h-8 rounded-lg bg-teal-100 flex items-center justify-center flex-shrink-0">
+                  <FiUser className="w-4 h-4 text-teal-600" />
                 </div>
-                <div>
-                  <p className="font-black text-gray-900">{bookingPopup.bookerName || 'Customer'}</p>
-                  <p className="text-xs text-gray-500 font-bold">{bookingPopup.bookerRole || 'User'} • {bookingPopup.bookerPhone}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="font-black text-gray-900 text-xs truncate">{bookingPopup.bookerName || 'Customer'}</p>
+                  <p className="text-[9px] text-gray-500 font-bold uppercase truncate">{bookingPopup.bookerRole || 'User'} • {bookingPopup.bookerPhone}</p>
                 </div>
               </div>
-              {bookingPopup.note && (
-                <div className="bg-white rounded-xl p-3 border border-gray-100">
-                  <p className="text-xs text-gray-600 font-medium">"{bookingPopup.note}"</p>
-                </div>
-              )}
             </div>
-
+ 
             {/* Countdown */}
-            <div className="flex items-center justify-center gap-2 mb-5">
-              <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+            <div className="flex items-center justify-center gap-2 mb-5 px-2">
+              <div className="flex-1 bg-gray-100 h-1.5 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-gradient-to-r from-teal-400 to-emerald-500 transition-all duration-1000 rounded-full"
                   style={{ width: `${(popupCountdown / 30) * 100}%` }}
                 />
               </div>
-              <span className="text-sm font-black text-teal-600 w-8 text-right">{popupCountdown}s</span>
+              <span className="text-[10px] font-black text-teal-600 w-6 text-right">{popupCountdown}s</span>
             </div>
-
+ 
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={handleReject}
                 disabled={actionLoading}
-                className="py-4 rounded-2xl font-black text-red-600 bg-red-50 hover:bg-red-100 transition-all active:scale-95 border-2 border-red-100"
+                className="py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest text-red-600 bg-red-50 hover:bg-red-100 transition-all active:scale-95 border border-red-100"
               >
                 Decline
               </button>
               <button
                 onClick={handleAccept}
                 disabled={actionLoading}
-                className="py-4 rounded-2xl font-black text-white bg-gradient-to-r from-green-500 to-emerald-600 shadow-lg shadow-green-200 hover:from-green-600 hover:to-emerald-700 transition-all active:scale-95 flex items-center justify-center gap-2"
+                className="py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-gradient-to-r from-green-500 to-emerald-600 shadow-lg shadow-green-200 hover:from-green-600 hover:to-emerald-700 transition-all active:scale-95"
               >
-                {actionLoading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <><FiCheckCircle /> Accept</>}
+                Accept
               </button>
             </div>
           </div>
