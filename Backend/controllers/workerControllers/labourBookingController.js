@@ -56,32 +56,67 @@ const bookLabour = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Labour is not available right now' });
     }
 
-    // Check if labour already has a pending booking
-    const existingPending = await LabourBooking.findOne({ labourId, status: 'pending' });
-    if (existingPending) {
-      return res.status(400).json({ success: false, message: 'Labour is already handling another booking request' });
+    // Check if labour already has a pending or accepted booking
+    const existingActive = await LabourBooking.findOne({ 
+      labourId, 
+      status: { $in: ['pending', 'accepted'] } 
+    });
+    if (existingActive) {
+      return res.status(400).json({ 
+        success: false, 
+        message: existingActive.status === 'pending' 
+          ? 'Labour is already handling another booking request' 
+          : 'Labour is currently on a job' 
+      });
     }
 
-    // Get booker info
+    // Get booker info — try all collections to ensure correct name resolution
     let bookerName = '';
     let bookerPhone = '';
-    const mongoRole = bookerRole === 'USER' ? 'User' : 'Vendor';
+    let displayRole = 'User';
+
+    console.log(`[Labour Book] bookerRole=${bookerRole}, bookerId=${bookerId}`);
     
     if (bookerRole === 'USER') {
+      displayRole = 'User';
       const user = await User.findById(bookerId).select('name phone');
-      bookerName = user?.name || 'User';
+      console.log('[Labour Book] User lookup:', user?.name, user?.phone);
+      bookerName = user?.name || '';
       bookerPhone = user?.phone || '';
     } else if (bookerRole === 'VENDOR') {
+      displayRole = 'Vendor';
       const vendor = await Vendor.findById(bookerId).select('name phone businessName');
-      bookerName = vendor?.businessName || vendor?.name || 'Vendor';
+      console.log('[Labour Book] Vendor lookup:', vendor?.businessName, vendor?.name);
+      bookerName = vendor?.businessName || vendor?.name || '';
       bookerPhone = vendor?.phone || '';
     }
+
+    // Fallback: if name still empty, search all collections
+    if (!bookerName) {
+      const userFallback = await User.findById(bookerId).select('name phone');
+      if (userFallback) {
+        bookerName = userFallback.name;
+        bookerPhone = userFallback.phone || bookerPhone;
+        displayRole = 'User';
+      } else {
+        const vendorFallback = await Vendor.findById(bookerId).select('name phone businessName');
+        if (vendorFallback) {
+          bookerName = vendorFallback.businessName || vendorFallback.name;
+          bookerPhone = vendorFallback.phone || bookerPhone;
+          displayRole = 'Vendor';
+        }
+      }
+    }
+
+    // Final fallback
+    if (!bookerName) bookerName = 'Unknown User';
+    console.log(`[Labour Book] Final: name=${bookerName}, role=${displayRole}, phone=${bookerPhone}`);
 
     // Create booking
     const booking = await LabourBooking.create({
       labourId,
       bookedById: bookerId,
-      bookedByRole: mongoRole,
+      bookedByRole: displayRole,
       bookedByName: bookerName,
       bookedByPhone: bookerPhone,
       note: note || '',
@@ -96,7 +131,7 @@ const bookLabour = async (req, res) => {
           bookingId: booking._id,
           bookerName,
           bookerPhone,
-          bookerRole: mongoRole,
+          bookerRole: displayRole,
           note: note || '',
           createdAt: booking.createdAt
         });
@@ -138,7 +173,8 @@ const acceptBooking = async (req, res) => {
     booking.acceptedAt = new Date();
     await booking.save();
 
-    // Removed updating to BUSY so they stay ONLINE
+    // Set labour to BUSY so they don't appear in new searches
+    await Worker.findByIdAndUpdate(labourId, { status: 'BUSY' });
 
     // Notify the booker via socket
     try {

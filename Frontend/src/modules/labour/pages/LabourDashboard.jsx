@@ -114,12 +114,18 @@ const LabourDashboard = () => {
       unlockAudio.play().then(() => unlockAudio.pause()).catch(() => {});
     } catch(e) {}
 
-    const newStatus = isOnline ? 'OFFLINE' : 'ONLINE';
+    if (labour?.status === 'BUSY') {
+      toast.error('Cannot change status while on a job');
+      return;
+    }
+
+    const newStatus = labour?.status === 'ONLINE' ? 'OFFLINE' : 'ONLINE';
     try {
       await api.put('/labour/status', { status: newStatus }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setIsOnline(!isOnline);
+      setLabour(prev => ({ ...prev, status: newStatus }));
+      setIsOnline(newStatus === 'ONLINE');
       toast.success(`You are now ${newStatus}`);
     } catch {
       toast.error('Failed to update status');
@@ -141,8 +147,25 @@ const LabourDashboard = () => {
       setBookingPopup(null);
       toast.success('Booking accepted!');
       fetchRecentBookings();
+      fetchProfile(); // Update status to BUSY
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to accept');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleComplete = async (bookingId) => {
+    setActionLoading(true);
+    try {
+      await api.post(`/labour/complete/${bookingId}`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success('Job marked as completed!');
+      fetchRecentBookings();
+      fetchProfile(); // Refresh stats and status
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to complete');
     } finally {
       setActionLoading(false);
     }
@@ -178,41 +201,35 @@ const LabourDashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-orange-400 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-gradient-to-br from-teal-50 to-emerald-50 flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-teal-400 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
-  const statusColor = isOnline ? '#16a34a' : '#6b7280';
+  const statusColor = labour?.status === 'ONLINE' ? '#0d9488' : labour?.status === 'BUSY' ? '#d97706' : '#6b7280';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-amber-50/20 to-orange-50/10 pb-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-teal-50/20 to-emerald-50/10 pb-8">
 
-      {/* Header */}
-      <div className="bg-gradient-to-r from-amber-500 to-orange-600 px-4 pt-12 pb-20 relative overflow-hidden">
+      {/* Header - Sticky */}
+      <div className="sticky top-0 z-[40] bg-gradient-to-r from-teal-500 to-emerald-600 px-4 pt-12 pb-16 relative overflow-hidden shadow-lg shadow-teal-900/10">
         <div className="absolute inset-0 bg-black/10" />
         <div className="absolute -top-8 -right-8 w-48 h-48 bg-white/10 rounded-full blur-2xl" />
         <div className="relative flex justify-between items-start">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <FiTool className="text-white/80 w-4 h-4" />
-              <span className="text-white/80 text-xs font-bold uppercase tracking-widest">Labour Dashboard</span>
+              <span className="text-white/80 text-[10px] font-black uppercase tracking-[0.2em]">Labour Dashboard</span>
             </div>
             <h1 className="text-2xl font-black text-white leading-tight">{labour?.name || 'Labour'}</h1>
-            <p className="text-white/70 text-sm mt-0.5">+91 {labour?.phone}</p>
+            <p className="text-white/70 text-sm font-bold mt-0.5 tracking-tight">+91 {labour?.phone}</p>
           </div>
-          <button
-            onClick={handleLogout}
-            className="p-2.5 bg-white/20 rounded-xl hover:bg-white/30 transition"
-          >
-            <FiLogOut className="w-5 h-5 text-white" />
-          </button>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="px-4 -mt-10 relative z-10">
+      {/* Stats Cards - Adjusted margin for sticky header */}
+      <div className="px-4 -mt-8 relative z-[41]">
         <div className="grid grid-cols-3 gap-3 mb-4">
           {[
             { icon: FiBriefcase, label: 'Total Jobs', value: labour?.totalJobs || 0 },
@@ -220,7 +237,7 @@ const LabourDashboard = () => {
             { icon: FiStar, label: 'Rating', value: labour?.rating ? labour.rating.toFixed(1) : '—' }
           ].map(({ icon: Icon, label, value }) => (
             <div key={label} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center">
-              <Icon className="w-5 h-5 text-orange-500 mx-auto mb-1" />
+              <Icon className="w-5 h-5 text-teal-500 mx-auto mb-1" />
               <div className="text-xl font-black text-gray-900">{value}</div>
               <div className="text-[9px] text-gray-400 font-black uppercase tracking-widest">{label}</div>
             </div>
@@ -235,15 +252,18 @@ const LabourDashboard = () => {
               <div className="flex items-center gap-2 mt-1">
                 <div className="w-2.5 h-2.5 rounded-full animate-pulse" style={{ backgroundColor: statusColor }} />
                 <span className="text-sm font-bold" style={{ color: statusColor }}>
-                  {isOnline ? 'ONLINE — Accepting bookings' : 'OFFLINE — Not visible to clients'}
+                  {labour?.status === 'ONLINE' ? 'ONLINE — Accepting bookings' : 
+                   labour?.status === 'BUSY' ? 'BUSY — On a job' : 
+                   'OFFLINE — Not visible to clients'}
                 </span>
               </div>
             </div>
             <button
               onClick={toggleOnline}
-              className={`relative w-16 h-8 rounded-full transition-all duration-300 ${isOnline ? 'bg-green-500' : 'bg-gray-300'}`}
+              disabled={labour?.status === 'BUSY'}
+              className={`relative w-16 h-8 rounded-full transition-all duration-300 ${labour?.status === 'ONLINE' ? 'bg-teal-500' : labour?.status === 'BUSY' ? 'bg-amber-500 opacity-50 cursor-not-allowed' : 'bg-gray-300'}`}
             >
-              <div className={`absolute top-1 w-6 h-6 rounded-full bg-white shadow-md transition-all duration-300 ${isOnline ? 'left-9' : 'left-1'}`} />
+              <div className={`absolute top-1 w-6 h-6 rounded-full bg-white shadow-md transition-all duration-300 ${labour?.status === 'ONLINE' ? 'left-9' : 'left-1'}`} />
             </button>
           </div>
           {!isOnline && (
@@ -281,21 +301,33 @@ const LabourDashboard = () => {
           ) : (
             <div className="space-y-3">
               {recentBookings.map(b => (
-                <div key={b._id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-2xl">
-                  <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center">
-                    <FiUser className="w-4 h-4 text-orange-600" />
+                <div key={b._id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-2xl border border-gray-100">
+                  <div className="w-10 h-10 rounded-xl bg-teal-100 flex items-center justify-center flex-shrink-0">
+                    <FiUser className="w-4 h-4 text-teal-600" />
                   </div>
-                  <div className="flex-1">
-                    <p className="font-black text-gray-900 text-sm">{b.bookedByName || 'Client'}</p>
-                    <p className="text-[10px] text-gray-400 uppercase font-bold">{b.bookedByRole} • {new Date(b.createdAt).toLocaleDateString()}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-black text-gray-900 text-sm truncate">{b.bookedByName || 'Customer'}</p>
+                    <p className="text-[10px] text-gray-400 uppercase font-bold">{b.bookedByRole || 'User'} • {new Date(b.createdAt).toLocaleDateString()}</p>
                   </div>
-                  <span className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider ${
-                    b.status === 'accepted' || b.status === 'completed' ? 'bg-green-100 text-green-700' :
-                    b.status === 'pending' ? 'bg-amber-100 text-amber-700' :
-                    'bg-red-100 text-red-700'
-                  }`}>
-                    {b.status}
-                  </span>
+                  <div className="flex flex-col items-end gap-1.5">
+                    <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider ${
+                      b.status === 'accepted' ? 'bg-blue-100 text-blue-700' :
+                      b.status === 'completed' ? 'bg-green-100 text-green-700' :
+                      b.status === 'pending' ? 'bg-amber-100 text-amber-700' :
+                      'bg-red-100 text-red-700'
+                    }`}>
+                      {b.status}
+                    </span>
+                    {b.status === 'accepted' && (
+                      <button
+                        onClick={() => handleComplete(b._id)}
+                        disabled={actionLoading}
+                        className="text-[10px] font-black text-teal-600 bg-teal-50 px-2 py-1 rounded-lg hover:bg-teal-100 active:scale-95 transition-all flex items-center gap-1"
+                      >
+                        <FiCheckCircle className="w-3 h-3" /> Done
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -310,10 +342,10 @@ const LabourDashboard = () => {
             {/* Animated ring */}
             <div className="flex items-center justify-center mb-5">
               <div className="relative">
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center shadow-xl">
+                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-teal-400 to-emerald-600 flex items-center justify-center shadow-xl">
                   <HiLightningBolt className="w-9 h-9 text-white" />
                 </div>
-                <div className="absolute inset-0 rounded-full border-4 border-orange-400 animate-ping opacity-40" />
+                <div className="absolute inset-0 rounded-full border-4 border-teal-400 animate-ping opacity-40" />
               </div>
             </div>
 
@@ -327,12 +359,12 @@ const LabourDashboard = () => {
 
             <div className="bg-gray-50 rounded-2xl p-4 mb-5 space-y-2">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center flex-shrink-0">
-                  <FiUser className="w-5 h-5 text-orange-600" />
+                <div className="w-10 h-10 rounded-xl bg-teal-100 flex items-center justify-center flex-shrink-0">
+                  <FiUser className="w-5 h-5 text-teal-600" />
                 </div>
                 <div>
-                  <p className="font-black text-gray-900">{bookingPopup.bookerName || 'Client'}</p>
-                  <p className="text-xs text-gray-500 font-bold">{bookingPopup.bookerRole} • {bookingPopup.bookerPhone}</p>
+                  <p className="font-black text-gray-900">{bookingPopup.bookerName || 'Customer'}</p>
+                  <p className="text-xs text-gray-500 font-bold">{bookingPopup.bookerRole || 'User'} • {bookingPopup.bookerPhone}</p>
                 </div>
               </div>
               {bookingPopup.note && (
@@ -346,11 +378,11 @@ const LabourDashboard = () => {
             <div className="flex items-center justify-center gap-2 mb-5">
               <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-amber-400 to-orange-500 transition-all duration-1000 rounded-full"
+                  className="h-full bg-gradient-to-r from-teal-400 to-emerald-500 transition-all duration-1000 rounded-full"
                   style={{ width: `${(popupCountdown / 30) * 100}%` }}
                 />
               </div>
-              <span className="text-sm font-black text-orange-600 w-8 text-right">{popupCountdown}s</span>
+              <span className="text-sm font-black text-teal-600 w-8 text-right">{popupCountdown}s</span>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
